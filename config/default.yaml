@@ -1,0 +1,7 @@
+debug:
+  verbose: True
+  visualize: True
+  save_images: True
+
+camera:
+  info_topic: '/camera/color/camera_info'
