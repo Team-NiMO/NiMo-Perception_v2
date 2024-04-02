@@ -1,0 +1,6 @@
+uint32 num_frames
+float64 timeout
+---
+string success
+uint16 num_frames
+nimo_perception/GraspPoint[] grasp_points
