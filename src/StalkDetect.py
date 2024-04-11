@@ -69,57 +69,7 @@ class StalkDetect:
         self.model_threshold = config["model"]["score_threshold"]
         self.model_device = config["model"]["device"]
 
-        self.minimum_mask_area = config["stalk"]["minimum_mask_area"]
-        self.feature_point_offset = config["stalk"]["feature_point_offset"]
-
-    def getStalkFeatures(self, masks, depth_image):
-        '''
-        Get the center points going up each stalk in the world frame
-
-        Parameters
-            masks: The masks of the detected stalks
-            depth_image: The current depth frame
-
-        Returns
-            stalks_features [(x, y, z), ...]: Points along the center of the stalk in the world frame
-        '''
-
-        stalks_features = []
-        for mask in masks:
-            # Ensure the mask has the minimum numbgetStalkFeatures(self, masks, depth_image)er of pixels
-            if np.count_nonzero(mask) < self.minimum_mask_area:
-                continue
-
-            # Swap x and y in the mask
-            mask = np.swapaxes(mask, 0, 1)
-            nonzero = np.nonzero(mask)
-
-            # Get the top and bottom height values of the stalk
-            # NOTE: bottom_y is the top of the mask in the image using openCV indexing
-            top_y, bottom_y = nonzero[1].min(), nonzero[1].max()
-
-            # For every FEATURE_POINT_PIXEL_OFFSET pixels, get the center point
-            stalk_features = []
-            for y in range(top_y, bottom_y, self.feature_point_offset):
-                # Find the average x index for nonzero pixels at this y value
-                x_indicies = np.nonzero(mask[:, y])[0]
-
-                # If there are no pixels, skip this value
-                if len(x_indicies) > 0:
-                    x_center = x_indicies.mean()
-
-                    # TODO: Use more pixels from the depth image to get a better depth (only if they are in the mask)
-                    z = depth_image[int(y) - 1, int(x_center)] / 1000
-                    x = self.camera_width - x_center
-                    y = self.camera_height - y
-
-                    x, y, z = utils.transformCam2World((x, y, z), self.camera_intrinsic, self.camera_frame, self.world_frame)
-
-                    stalk_features.append((x, y, z))
-
-            stalks_features.append(stalk_features)
-
-        return stalks_features
+        self.stalk_config = config["stalk"]
 
     def getStalksCallback(self, image, depth_image):
         '''
@@ -136,11 +86,11 @@ class StalkDetect:
 
         # Run detection and get feature points
         masks, output, scores = self.model.forward(image)
-        stalks_features = self.getStalkFeatures(masks, depth_image)
+        # stalks_features = self.getStalkFeatures(masks, depth_image)
 
         # Create stalk objects and add to running list
-        for stalk_features, score in zip(stalks_features, scores):
-            new_stalk = stalk.Stalk(stalk_features, score)
+        for mask, score in zip(masks, scores):
+            new_stalk = stalk.Stalk(mask, score, depth_image, self.stalk_config)
 
         #     if new)stalk.valid:
         #         self.stalks.append(new_stalk)
@@ -148,12 +98,11 @@ class StalkDetect:
         # VISUALIZE (masked image, stalk line, grasp point)
                 
         if self.save_images:
-            # features_image = image.copy()
-            # for stalk_features in stalks_features:
-            #     for x, y, z in stalk_features:
-            #         cv2.circle(features_image, (int(self.camera_width - x), int(self.camera_height - y)), 2, (0, 0, 255), -1)
+            features_image = image.copy()
+            for x, y, _ in new_stalk.cam_features:
+                cv2.circle(features_image, (int(self.camera_width - x), int(self.camera_height - y)), 2, (0, 0, 255), -1)
 
-            # cv2.imwrite(self.package_path+"/output/FEATURES{}-{}.png".format(self.inference_index, self.image_index), features_image)
+            cv2.imwrite(self.package_path+"/output/FEATURES{}-{}.png".format(self.inference_index, self.image_index), features_image)
             cv2.imwrite(self.package_path+"/output/MASKED{}-{}.png".format(self.inference_index, self.image_index), self.model.visualize(image, output))
 
         self.image_index += 1
