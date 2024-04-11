@@ -7,6 +7,8 @@ camera:
   info_topic: '/camera/color/camera_info'
   image_topic: '/camera/color/image_raw'
   depth_topic: '/camera/depth/image_rect_raw'
+  camera_frame: 'camera_link'
+  world_frame: 'camera_link'
 
 model:
   model: Mask_RCNN

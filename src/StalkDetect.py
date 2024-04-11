@@ -10,7 +10,7 @@ from cv_bridge import CvBridge
 from sensor_msgs.msg import CameraInfo, Image
 from nimo_perception.srv import *
 from nimo_perception.models import Mask_RCNN
-from nimo_perception.utils import Stalk
+from nimo_perception.utils import stalk, utils
 
 class StalkDetect:
     def __init__(self):
@@ -20,7 +20,13 @@ class StalkDetect:
         if self.verbose: rospy.loginfo('Starting nimo_perception node.')
 
         # Check camera connection
-        if not self.checkCamera(10): rospy.logwarn('Camera info not found, so camera is likely not running!')
+        if not utils.isCameraRunning(self.camera_info_topic, 10): 
+            rospy.logwarn('Camera info not found, so camera is likely not running!')
+            self.camera_width = None
+            self.camera_height = None
+            self.camera_intrinsic = None
+        else: 
+            self.camera_width, self.camera_height, self.camera_intrinsic = utils.getCameraInfo(self.camera_info_topic)
 
         # Initialize variables
         self.cv_bridge = CvBridge()
@@ -55,6 +61,8 @@ class StalkDetect:
         self.camera_info_topic = config["camera"]["info_topic"]
         self.camera_image_topic = config["camera"]["image_topic"]
         self.camera_depth_topic = config["camera"]["depth_topic"]
+        self.camera_frame = config["camera"]["camera_frame"]
+        self.world_frame = config["camera"]["world_frame"]
 
         self.model_arch = config["model"]["model"]
         self.model_path = self.package_path + "/weights/" + config["model"]["weights"]
@@ -64,32 +72,9 @@ class StalkDetect:
         self.minimum_mask_area = config["stalk"]["minimum_mask_area"]
         self.feature_point_offset = config["stalk"]["feature_point_offset"]
 
-    def checkCamera(self, t=2):
-        '''
-        Determine whether the camera is running by checking the camera_info topic
-
-        Parameters
-            t: The timeout to wait for the camera info
-
-        Returns
-            isCameraRunning: Whether the camera_info topic has been found
-        '''
-        isCameraRunning = True
-
-        try:
-            camera_info = rospy.wait_for_message(self.camera_info_topic, CameraInfo, timeout=t)
-            if camera_info is None:
-                raise rospy.ROSException
-            self.camera_height = camera_info.height
-            self.camera_width = camera_info.width
-        except rospy.ROSException:
-            isCameraRunning = False
-
-        return isCameraRunning
-
     def getStalkFeatures(self, masks, depth_image):
         '''
-        Get the center points going up each stalk
+        Get the center points going up each stalk in the world frame
 
         Parameters
             masks: The masks of the detected stalks
@@ -123,12 +108,12 @@ class StalkDetect:
                 if len(x_indicies) > 0:
                     x_center = x_indicies.mean()
 
+                    # TODO: Use more pixels from the depth image to get a better depth (only if they are in the mask)
+                    z = depth_image[int(y) - 1, int(x_center)] / 1000
                     x = self.camera_width - x_center
                     y = self.camera_height - y
-                    # TODO: Use more pixels from the depth image to get a better depth (only if they are in the mask)
-                    z = depth_image[int(y), int(x)] / 1000
 
-                    # TODO: TRANSFORM TO WORLD FRAME
+                    x, y, z = utils.transformCam2World((x, y, z), self.camera_intrinsic, self.camera_frame, self.world_frame)
 
                     stalk_features.append((x, y, z))
 
@@ -147,22 +132,28 @@ class StalkDetect:
 
         # Convert image messaages to arrays
         depth_image = np.array(self.cv_bridge.imgmsg_to_cv2(depth_image, desired_encoding="passthrough"), dtype=np.float32)
-        image = self.cv_bridge.imgmsg_to_cv2(image, desired_encoding='rgb8')
+        image = self.cv_bridge.imgmsg_to_cv2(image, desired_encoding='bgr8')
 
         # Run detection and get feature points
         masks, output, scores = self.model.forward(image)
-        # stalks_features = self.getStalkFeatures(masks, depth_image)
+        stalks_features = self.getStalkFeatures(masks, depth_image)
 
-        # # Create stalk objects and add to running list
-        # for stalk_features, score in zip(stalks_features, scores, masks):
-        #     stalk = Stalk.Stalk(stalk_features, score)
+        # Create stalk objects and add to running list
+        for stalk_features, score in zip(stalks_features, scores):
+            new_stalk = stalk.Stalk(stalk_features, score)
 
-        #     if stalk.valid:
-        #         self.stalks.append(stalk)
+        #     if new)stalk.valid:
+        #         self.stalks.append(new_stalk)
         
-        # # VISUALIZE (masked image, stalk line, grasp point)
+        # VISUALIZE (masked image, stalk line, grasp point)
                 
         if self.save_images:
+            # features_image = image.copy()
+            # for stalk_features in stalks_features:
+            #     for x, y, z in stalk_features:
+            #         cv2.circle(features_image, (int(self.camera_width - x), int(self.camera_height - y)), 2, (0, 0, 255), -1)
+
+            # cv2.imwrite(self.package_path+"/output/FEATURES{}-{}.png".format(self.inference_index, self.image_index), features_image)
             cv2.imwrite(self.package_path+"/output/MASKED{}-{}.png".format(self.inference_index, self.image_index), self.model.visualize(image, output))
 
         self.image_index += 1
@@ -196,9 +187,11 @@ class StalkDetect:
         if self.verbose: rospy.loginfo('Received a GetStalks request for {} frames with timeout {} seconds'.format(req.num_frames, req.timeout))
 
         # Check camera connection
-        if not self.checkCamera():
+        if not utils.isCameraRunning(self.camera_info_topic):
             rospy.logerr('Camera info not found, so camera is likely not running!')
             return GetStalksResponse(success='ERROR', num_frames=0)
+        elif self.camera_width == None:
+            self.camera_width, self.camera_height, self.camera_intrinsic = utils.getCameraInfo(self.camera_info_topic)
 
         # Reset
         self.stalks = []

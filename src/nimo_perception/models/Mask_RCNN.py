@@ -41,7 +41,6 @@ class Mask_RCNN:
                 that pixel is inside that prediction's mask
             dict: output object from detectron2 predictor
         '''
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
         outputs = self.model(image)
         scores = outputs['instances'].scores.to('cpu').numpy()
@@ -62,8 +61,6 @@ class Mask_RCNN:
         Returns
             np.ndarray: visualized results
         '''
-
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
         metadata = MetadataCatalog.get('empty')
         metadata.thing_colors = [(255, 0, 0)]
