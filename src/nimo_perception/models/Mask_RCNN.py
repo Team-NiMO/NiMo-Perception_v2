@@ -51,7 +51,7 @@ class Mask_RCNN:
 
         return masks, outputs, scores
 
-    def visualize(self, input_image, output):
+    def visualize(self, image, output):
         '''
         Visualize the results of the model
 
@@ -63,13 +63,15 @@ class Mask_RCNN:
             np.ndarray: visualized results
         '''
 
+        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+
         metadata = MetadataCatalog.get('empty')
         metadata.thing_colors = [(255, 0, 0)]
 
-        v = Visualizer(input_image[:, :, ::-1],
+        v = Visualizer(image[:, :, ::-1],
                        metadata=MetadataCatalog.get('empty'),
                        instance_mode=ColorMode.SEGMENTATION)  # remove the colors of unsegmented pixels
 
         v = v.draw_instance_predictions(output['instances'].to('cpu'))
 
-        return v.get_image()[:, :, ::-1]
+        return v.get_image()[:, :, ::-1].astype(np.uint8)

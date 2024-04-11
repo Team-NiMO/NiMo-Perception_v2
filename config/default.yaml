@@ -10,7 +10,7 @@ camera:
 
 model:
   model: Mask_RCNN
-  path: '/home/amiga/nimo_ws/src/NiMo-Perception_v2/models/model_field_day1.pth'
+  weights: 'model_field_day1.pth'
   score_threshold: 0.6
   device: -1
 
