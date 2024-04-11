@@ -30,6 +30,7 @@ class StalkDetect:
 
         # Initialize variables
         self.cv_bridge = CvBridge()
+        self.visualizer = visualize.Visualizer(self.world_frame)
 
         if self.model_arch == "Mask_RCNN":
             self.model = Mask_RCNN.Mask_RCNN(self.model_path, self.model_threshold, self.model_device)
@@ -61,7 +62,6 @@ class StalkDetect:
         self.camera_info_topic = config["camera"]["info_topic"]
         self.camera_image_topic = config["camera"]["image_topic"]
         self.camera_depth_topic = config["camera"]["depth_topic"]
-        self.camera_frame = config["camera"]["camera_frame"]
         self.world_frame = config["camera"]["world_frame"]
 
         self.model_arch = config["model"]["model"]
@@ -69,7 +69,33 @@ class StalkDetect:
         self.model_threshold = config["model"]["score_threshold"]
         self.model_device = config["model"]["device"]
 
+        self.cluster_threshold = config["stalk"]["cluster_threshold"]
+
         self.config = config
+
+    def clusterStalks(self, stalks):
+        '''
+        Cluster the stalks from multiple frames
+
+        Parameters
+            stalks: The list of unclustered stalks from multiple frames
+
+        Returns
+            clustered_stalks: The list of clustered stalks
+        '''
+
+        # clustering_labels = [0]
+        # for position in positions[1:]:
+        #     min_distance = float('inf')
+        #     min_cluster = 0
+        #     for i in range(len(clustering_labels)):
+        #         if distance(position, positions[i]) < min_distance:
+        #             min_distance = distance(position, positions[i])
+        #             min_cluster = clustering_labels[i]
+
+        #     clustering_labels.append(min_cluster if min_distance < THRESHOLD else max(clustering_labels) + 1)
+
+        # clustering_labels = np.array(clustering_labels)
 
     def getStalksCallback(self, image, depth_image):
         '''
@@ -80,31 +106,34 @@ class StalkDetect:
             depth_image: The current depth frame
         '''
 
+        # Reset new stalks
+        new_stalks = []
+
         # Convert image messaages to arrays
         depth_image = np.array(self.cv_bridge.imgmsg_to_cv2(depth_image, desired_encoding="passthrough"), dtype=np.float32)
         image = self.cv_bridge.imgmsg_to_cv2(image, desired_encoding='bgr8')
 
         # Run detection and get feature points
         masks, output, scores = self.model.forward(image)
-        # stalks_features = self.getStalkFeatures(masks, depth_image)
 
         # Create stalk objects and add to running list
         for mask, score in zip(masks, scores):
             new_stalk = stalk.Stalk(mask, score, depth_image, self.camera_intrinsic, self.config)
 
+            # Append to list if stalks are valid
             if new_stalk.valid:
-                self.stalks.append(new_stalk)
+                new_stalks.append(new_stalks)
         
-        # VISUALIZE (stalk line, grasp point, features)
-        if self.visualize:
-            pass
-                
         if self.save_images:
             features_image = self.model.visualize(image, output)
-            for x, y, _ in new_stalk.cam_features:
-                cv2.circle(features_image, (int(x), int(y)), 2, (255, 255, 255), -1)
+            for new_stalk in new_stalks:
+                for x, y, _ in new_stalk.cam_features:
+                    cv2.circle(features_image, (int(x), int(y)), 2, (255, 255, 255), -1)
 
             cv2.imwrite(self.package_path+"/output/FEATURES{}-{}.png".format(self.inference_index, self.image_index), features_image)
+
+        for new_stalk in new_stalks:
+            self.stalks.append(new_stalk)
 
         self.image_index += 1
 
@@ -147,7 +176,7 @@ class StalkDetect:
         self.stalks = []
         self.image_index = 0
         try:
-            self.inference_index = max([int(f[6:].split("-")[0]) for f in os.listdir(self.package_path+"/output")]) + 1
+            self.inference_index = max([int(f[len("FEATURES"):].split("-")[0]) for f in os.listdir(self.package_path+"/output")]) + 1
         except:
             self.inference_index = 0
 
@@ -167,7 +196,16 @@ class StalkDetect:
         depth_susbscriber.unregister()
         del ts
 
+        if len(self.stalks) == 0:
+            rospy.logwarn('No valid stalks detected in any frame for this service request, requesting a REPOSITION')
+            return GetStalksResponse(success='REPOSITION', num_frames=self.image_index + 1)
+        
         # Cluster stalks + average
+
+        # # Visualize
+        # self.visualizer.clearMarkers()
+        # self.visualizer.publishStalk(new_stalk.world_features)
+        # self.visualizer.publishGraspPoint(new_stalk.grasp_point)
 
         # Return with list
 
