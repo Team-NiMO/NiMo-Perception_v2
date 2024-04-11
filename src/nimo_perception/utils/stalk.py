@@ -32,7 +32,7 @@ class Stalk:
         
         # GET WEIGHT
 
-        # self.valid &= self.isValid()
+        self.valid = self.isValid(self.valid)
 
     def loadConfig(self, config):
         '''
@@ -199,9 +199,14 @@ class Stalk:
         Returns
             grasp_point: The grasp point in the world frame
         '''
-        return max([z for _, _, z in stalk_features]) + self.optimal_grasp_height
 
-    def setValidity(self):
+        # TODO: FIX GRASP POINT (MAKE ON THE STALK)
+
+        heights = np.array([z for _, _, z in stalk_features])
+        x, y, z = stalk_features[np.argmin(heights)]
+        return (x, y, z)
+
+    def isValid(self, valid):
         '''
         Determine whether the stalk is valid based on score, width, and grasp point
 
@@ -210,4 +215,7 @@ class Stalk:
         '''
 
         # TODO: FILTER INVALID STALKS (SCORE, WIDTH, GRASP POINT)
-        self.valid = self.valid
+        if self.score < 0.9:
+            valid = False
+
+        return valid
