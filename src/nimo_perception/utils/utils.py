@@ -4,6 +4,7 @@ import numpy as np
 import tf_conversions
 from sensor_msgs.msg import CameraInfo
 from geometry_msgs.msg import Point, Pose
+from skimage.measure import LineModelND, ransac
 
 def isCameraRunning(camera_info_topic, timeout=2):
         '''
@@ -102,3 +103,31 @@ def transformCam2World(point, intrinsic, camera_frame, world_frame):
         x, y, z, _ = np.matmul(E_cam_to_world, np.array([z, x, y, 1]))
 
         return x, y, z
+
+def ransac_2d(points):
+    '''
+    Perform RANSAC line detection on a set of 2D points
+
+    Parameters
+        points: The points to perform RANSAC on
+
+    Returns
+        Line: The best line found
+    '''
+    
+    points = np.array(points)
+
+    model = LineModelND()
+    model.estimate(points)
+
+    model_robust, inliers = ransac(points, LineModelND, min_samples=2,
+                               residual_threshold=1, max_trials=1000)
+
+    x = np.array([0, 1])
+    y = model_robust.predict_y([0, 1])
+
+    slope = (y[1] - y[0]) / (x[1] - x[0])
+    intercept = model_robust.predict_x([0])
+    inlier_points = points[inliers]
+
+    return slope, intercept, inlier_points

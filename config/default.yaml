@@ -19,3 +19,4 @@ model:
 stalk:
   minimum_mask_area: 30
   feature_point_offset: 10
+  optimal_grasp_height: 0.11
