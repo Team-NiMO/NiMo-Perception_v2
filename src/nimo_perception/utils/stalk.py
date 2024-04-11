@@ -30,7 +30,8 @@ class Stalk:
         # Get grasp point
         self.grasp_point = self.getGrasp(self.world_features)
         
-        # GET WEIGHT
+        # GET weight
+        self.weight = self.getWeight()
 
         self.valid = self.isValid(self.valid)
 
@@ -44,6 +45,15 @@ class Stalk:
         self.minimum_mask_area = config["stalk"]["minimum_mask_area"]
         self.feature_point_offset = config["stalk"]["feature_point_offset"]
         self.optimal_grasp_height = config["stalk"]["optimal_grasp_height"]
+        self.minimum_stalk_width = config["stalk"]["minimum_stalk_width"]
+        self.maximum_stalk_width = config["stalk"]["maximum_stalk_width"]
+
+        self.minimum_x = config["stalk"]["min_x"]
+        self.maximum_x = config["stalk"]["max_x"]
+        self.minimum_y = config["stalk"]["min_y"]
+        self.maximum_y = config["stalk"]["max_y"]
+        self.minimum_z = config["stalk"]["min_z"]
+        self.maximum_z = config["stalk"]["max_z"]
 
         self.camera_frame = config["camera"]["camera_frame"]
         self.world_frame = config["camera"]["world_frame"]
@@ -200,11 +210,26 @@ class Stalk:
             grasp_point: The grasp point in the world frame
         '''
 
-        # TODO: FIX GRASP POINT (MAKE ON THE STALK)
-
         heights = np.array([z for _, _, z in stalk_features])
-        x, y, z = stalk_features[np.argmin(heights)]
+        _, _, z = stalk_features[np.argmin(heights)]
+        z += self.optimal_grasp_height
+
+        normalized_direction = self.stalk_line[0] / np.linalg.norm(self.stalk_line[0])
+        t = (z - self.stalk_line[1][2]) / normalized_direction[2]
+
+        x = self.stalk_line[1][0] + t * normalized_direction[0]
+        y = self.stalk_line[1][1] + t * normalized_direction[1]
+
         return (x, y, z)
+    
+    def getWeight(self):
+        '''
+        Get the weight of the cornstalk
+
+        Returns
+            weight: The weight of the cornstalk
+        '''
+        return self.score ** 2 * self.width
 
     def isValid(self, valid):
         '''
@@ -214,8 +239,22 @@ class Stalk:
             valid: The validity of the stalk
         '''
 
-        # TODO: FILTER INVALID STALKS (SCORE, WIDTH, GRASP POINT)
+        # Filter based on score
         if self.score < 0.9:
+            valid = False
+
+        # Filter based on width
+        if self.width < self.minimum_stalk_width or self.width > self.maximum_stalk_width:
+            valid = False
+            
+        # Filter based on grasp point location  
+        if self.grasp_point[0] < self.minimum_x or self.grasp_point[0] > self.maximum_x:
+            valid = False
+
+        if self.grasp_point[1] < self.minimum_y or self.grasp_point[1] > self.maximum_y:
+            valid = False
+
+        if self.grasp_point[2] < self.minimum_z or self.grasp_point[2] > self.maximum_z:
             valid = False
 
         return valid

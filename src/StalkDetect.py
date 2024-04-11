@@ -7,8 +7,11 @@ import numpy as np
 import message_filters
 from cv_bridge import CvBridge
 
-from sensor_msgs.msg import CameraInfo, Image
+from geometry_msgs.msg import Point
+from sensor_msgs.msg import Image
+
 from nimo_perception.srv import *
+from nimo_perception.msg import *
 from nimo_perception.models import Mask_RCNN
 from nimo_perception.utils import stalk, utils, visualize
 
@@ -81,21 +84,46 @@ class StalkDetect:
             stalks: The list of unclustered stalks from multiple frames
 
         Returns
-            clustered_stalks: The list of clustered stalks
+            sorted_grasp_points: The list of clustered grasp_points sorted from highest to lowest weight
+            sorted_weights: The list of clustered weights sorted from highest to lowest
         '''
 
-        # clustering_labels = [0]
-        # for position in positions[1:]:
-        #     min_distance = float('inf')
-        #     min_cluster = 0
-        #     for i in range(len(clustering_labels)):
-        #         if distance(position, positions[i]) < min_distance:
-        #             min_distance = distance(position, positions[i])
-        #             min_cluster = clustering_labels[i]
+        # Determine clusters
+        clustering_labels = [0]
+        for stalk in stalks[1:]:
+            min_distance = float('inf')
+            min_cluster = 0
+            for i in range(len(clustering_labels)):
+                dist = np.linalg.norm(np.array(stalk.grasp_point) - np.array(stalks[i].grasp_point))
+                if dist < min_distance:
+                    min_distance = dist
+                    min_cluster = clustering_labels[i]
 
-        #     clustering_labels.append(min_cluster if min_distance < THRESHOLD else max(clustering_labels) + 1)
+            clustering_labels.append(min_cluster if min_distance < self.cluster_threshold else max(clustering_labels) + 1)
 
-        # clustering_labels = np.array(clustering_labels)
+        clustering_labels = np.array(clustering_labels)
+
+        # Combine clusters
+        clustered_grasp_points = []
+        culstered_weights = []
+        for label in np.unique(clustering_labels):
+            grasp_points = [stalk.grasp_point for stalk in np.array(stalks)[np.nonzero(clustering_labels == label)]]
+            weights = [stalk.weight for stalk in np.array(stalks)[np.nonzero(clustering_labels == label)]]
+
+            grasp_avg = Point(x=np.mean([x for x, _, _ in grasp_points]),
+                        y=np.mean([y for _, y, _ in grasp_points]),
+                        z=np.mean([z for _, _, z in grasp_points]))
+            
+            weight_avg = np.mean(weights)
+
+            clustered_grasp_points.append(grasp_avg)
+            culstered_weights.append(weight_avg)
+
+        # Sort representative stalks by weight
+        sorted_grasp_points = [x for _, x in sorted(zip(culstered_weights, clustered_grasp_points), key=lambda pair: pair[0], reverse=True)]
+        sorted_weights = sorted(culstered_weights, reverse=True)
+
+        return sorted_grasp_points, sorted_weights
 
     def getStalksCallback(self, image, depth_image):
         '''
@@ -122,7 +150,13 @@ class StalkDetect:
 
             # Append to list if stalks are valid
             if new_stalk.valid:
-                new_stalks.append(new_stalks)
+                new_stalks.append(new_stalk)
+
+        self.visualizer.clearMarkers()
+        if self.visualize:
+            for new_stalk in new_stalks:
+                self.visualizer.publishStalk(new_stalk.world_features)
+                self.visualizer.publishGraspPoint(new_stalk.grasp_point)
         
         if self.save_images:
             features_image = self.model.visualize(image, output)
@@ -200,14 +234,15 @@ class StalkDetect:
             rospy.logwarn('No valid stalks detected in any frame for this service request, requesting a REPOSITION')
             return GetStalksResponse(success='REPOSITION', num_frames=self.image_index + 1)
         
-        # Cluster stalks + average
+        # Cluster stalks + sort
+        clustered_grasp_points, clustered_weights = self.clusterStalks(self.stalks)
 
-        # # Visualize
-        # self.visualizer.clearMarkers()
-        # self.visualizer.publishStalk(new_stalk.world_features)
-        # self.visualizer.publishGraspPoint(new_stalk.grasp_point)
+        grasp_msgs = []
+        for grasp_point, weight in zip(clustered_grasp_points, clustered_weights):
+            grasp_msgs.append(GraspPoint(position=grasp_point, weight=weight))
 
         # Return with list
+        return GetStalksResponse(success="DONE", grasp_points=grasp_msgs, num_frames=self.image_index+1)
 
     def getWidth(self, req: GetWidthRequest) -> GetWidthResponse:
         '''
