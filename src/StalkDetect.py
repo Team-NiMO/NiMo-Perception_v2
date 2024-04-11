@@ -10,7 +10,7 @@ from cv_bridge import CvBridge
 from sensor_msgs.msg import CameraInfo, Image
 from nimo_perception.srv import *
 from nimo_perception.models import Mask_RCNN
-from nimo_perception.utils import stalk, utils
+from nimo_perception.utils import stalk, utils, visualize
 
 class StalkDetect:
     def __init__(self):
@@ -69,7 +69,7 @@ class StalkDetect:
         self.model_threshold = config["model"]["score_threshold"]
         self.model_device = config["model"]["device"]
 
-        self.stalk_config = config["stalk"]
+        self.config = config
 
     def getStalksCallback(self, image, depth_image):
         '''
@@ -90,20 +90,21 @@ class StalkDetect:
 
         # Create stalk objects and add to running list
         for mask, score in zip(masks, scores):
-            new_stalk = stalk.Stalk(mask, score, depth_image, self.stalk_config)
+            new_stalk = stalk.Stalk(mask, score, depth_image, self.camera_intrinsic, self.config)
 
-        #     if new)stalk.valid:
-        #         self.stalks.append(new_stalk)
+            if new_stalk.valid:
+                self.stalks.append(new_stalk)
         
-        # VISUALIZE (masked image, stalk line, grasp point)
+        # VISUALIZE (stalk line, grasp point, features)
+        if self.visualize:
+            pass
                 
         if self.save_images:
-            features_image = image.copy()
+            features_image = self.model.visualize(image, output)
             for x, y, _ in new_stalk.cam_features:
-                cv2.circle(features_image, (int(self.camera_width - x), int(self.camera_height - y)), 2, (0, 0, 255), -1)
+                cv2.circle(features_image, (int(x), int(y)), 2, (255, 255, 255), -1)
 
             cv2.imwrite(self.package_path+"/output/FEATURES{}-{}.png".format(self.inference_index, self.image_index), features_image)
-            cv2.imwrite(self.package_path+"/output/MASKED{}-{}.png".format(self.inference_index, self.image_index), self.model.visualize(image, output))
 
         self.image_index += 1
 
