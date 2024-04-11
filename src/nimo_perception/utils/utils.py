@@ -35,21 +35,16 @@ def getCameraInfo(camera_info_topic, timeout=2):
         timeout: The timeout to wait for the camera info
 
     Returns
-        width: The width of the RGB-D image
-        height: The height of the RGB-D image
         intrinsic: The camera intrinsics
     '''
     
     try:
         camera_info = rospy.wait_for_message(camera_info_topic, CameraInfo, timeout=timeout)
-
-        width = camera_info.width
-        height = camera_info.height
         intrinsic = np.array(camera_info.K).reshape((3, 3))
     except rospy.ROSException:
-        return None, None, None, 
+        return None
 
-    return width, height, intrinsic
+    return intrinsic
 
 def getCam2WorldTransform(camera_frame, world_frame):
     '''

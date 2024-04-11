@@ -25,11 +25,9 @@ class StalkDetect:
         # Check camera connection
         if not utils.isCameraRunning(self.camera_info_topic, 10): 
             rospy.logwarn('Camera info not found, so camera is likely not running!')
-            self.camera_width = None
-            self.camera_height = None
             self.camera_intrinsic = None
         else: 
-            self.camera_width, self.camera_height, self.camera_intrinsic = utils.getCameraInfo(self.camera_info_topic)
+            self.camera_intrinsic = utils.getCameraInfo(self.camera_info_topic)
 
         # Initialize variables
         self.cv_bridge = CvBridge()
@@ -203,8 +201,8 @@ class StalkDetect:
         if not utils.isCameraRunning(self.camera_info_topic):
             rospy.logerr('Camera info not found, so camera is likely not running!')
             return GetStalksResponse(success='ERROR', num_frames=0)
-        elif self.camera_width == None:
-            self.camera_width, self.camera_height, self.camera_intrinsic = utils.getCameraInfo(self.camera_info_topic)
+        elif self.camera_intrinsic == None:
+            self.camera_intrinsic = utils.getCameraInfo(self.camera_info_topic)
 
         # Reset
         self.stalks = []
