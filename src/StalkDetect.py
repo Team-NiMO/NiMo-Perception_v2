@@ -1,8 +1,11 @@
+import os
+import cv2
 import yaml
 import rospy
 import rospkg
 import numpy as np
 import message_filters
+from cv_bridge import CvBridge
 
 from sensor_msgs.msg import CameraInfo, Image
 from nimo_perception.srv import *
@@ -20,6 +23,8 @@ class StalkDetect:
         if not self.checkCamera(10): rospy.logwarn('Camera info not found, so camera is likely not running!')
 
         # Initialize variables
+        self.cv_bridge = CvBridge()
+
         if self.model_arch == "Mask_RCNN":
             self.model = Mask_RCNN.Mask_RCNN(self.model_path, self.model_threshold, self.model_device)
         else:
@@ -38,7 +43,8 @@ class StalkDetect:
         '''
 
         rospack = rospkg.RosPack()
-        config_path = rospack.get_path('nimo_perception') + '/config/default.yaml'
+        self.package_path = rospack.get_path('nimo_perception')
+        config_path = self.package_path + '/config/default.yaml'
         with open(config_path) as file:
             config = yaml.load(file, Loader=yaml.FullLoader)
 
@@ -51,7 +57,7 @@ class StalkDetect:
         self.camera_depth_topic = config["camera"]["depth_topic"]
 
         self.model_arch = config["model"]["model"]
-        self.model_path = config["model"]["path"]
+        self.model_path = self.package_path + "/weights/" + config["model"]["weights"]
         self.model_threshold = config["model"]["score_threshold"]
         self.model_device = config["model"]["device"]
 
@@ -145,16 +151,19 @@ class StalkDetect:
 
         # Run detection and get feature points
         masks, output, scores = self.model.forward(image)
-        stalks_features = self.getStalkFeatures(masks, depth_image)
+        # stalks_features = self.getStalkFeatures(masks, depth_image)
 
-        # Create stalk objects and add to running list
-        for stalk_features, score in zip(stalks_features, scores, masks):
-            stalk = Stalk.Stalk(stalk_features, score)
+        # # Create stalk objects and add to running list
+        # for stalk_features, score in zip(stalks_features, scores, masks):
+        #     stalk = Stalk.Stalk(stalk_features, score)
 
-            if stalk.valid:
-                self.stalks.append(stalk)
+        #     if stalk.valid:
+        #         self.stalks.append(stalk)
         
-        # VISUALIZE (masked image, stalk line, grasp point)
+        # # VISUALIZE (masked image, stalk line, grasp point)
+                
+        if self.save_images:
+            cv2.imwrite(self.package_path+"/output/MASKED{}-{}.png".format(self.inference_index, self.image_index), self.model.visualize(image, output))
 
         self.image_index += 1
 
@@ -194,10 +203,12 @@ class StalkDetect:
         # Reset
         self.stalks = []
         self.image_index = 0
+        try:
+            self.inference_index = max([int(f[6:].split("-")[0]) for f in os.listdir(self.package_path+"/output")]) + 1
+        except:
+            self.inference_index = 0
 
         # Setup callbacks
-        rospy.logwarn(self.camera_depth_topic)
-        rospy.logwarn(self.camera_image_topic)
         image_subscriber = message_filters.Subscriber(self.camera_image_topic, Image)
         depth_susbscriber = message_filters.Subscriber(self.camera_depth_topic, Image)
         ts = message_filters.ApproximateTimeSynchronizer([image_subscriber, depth_susbscriber], queue_size=5, slop=0.2)
