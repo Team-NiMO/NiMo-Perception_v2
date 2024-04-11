@@ -1,20 +1,22 @@
 import numpy as np
 import warnings
 import pyransac3d as pyrsc
+from nimo_perception.utils import utils
 
 class Stalk:
     def __init__(self, stalk_features, score):
+
         self.features = stalk_features
         self.score = score
 
         # CATCH ALL ERRORS AND SET INVALID
-                
+        
         # GET LINE
         # GET WIDTH
         # GET GRASP POINT
         # GET WEIGHT
 
-        self.setValidity()
+        # self.setValidity()
 
     def setValidity(self):
         '''
