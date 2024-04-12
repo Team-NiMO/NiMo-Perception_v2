@@ -135,6 +135,8 @@ class StalkDetect:
         # Reset new stalks
         new_stalks = []
 
+        if self.verbose: rospy.loginfo("Capturing Image {}".format(self.image_index))
+
         # Convert image messaages to arrays
         depth_image = np.array(self.cv_bridge.imgmsg_to_cv2(depth_image, desired_encoding="passthrough"), dtype=np.float32)
         image = self.cv_bridge.imgmsg_to_cv2(image, desired_encoding='bgr8')
@@ -201,7 +203,7 @@ class StalkDetect:
         if not utils.isCameraRunning(self.camera_info_topic):
             rospy.logerr('Camera info not found, so camera is likely not running!')
             return GetStalksResponse(success='ERROR', num_frames=0)
-        elif self.camera_intrinsic == None:
+        elif self.camera_intrinsic is None:
             self.camera_intrinsic = utils.getCameraInfo(self.camera_info_topic)
 
         # Reset

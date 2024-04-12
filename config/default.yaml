@@ -8,13 +8,13 @@ camera:
   image_topic: '/camera/color/image_raw'
   depth_topic: '/camera/depth/image_rect_raw'
   camera_frame: 'camera_link'
-  world_frame: 'camera_link'
+  world_frame: 'world'
 
 model:
   model: Mask_RCNN
   weights: 'model_field_day1.pth'
   score_threshold: 0.6
-  device: -1
+  device: 0
 
 stalk:
   minimum_mask_area: 30
@@ -24,9 +24,9 @@ stalk:
   minimum_stalk_width: 12
   maximum_stalk_width: 45
 
-  min_x: -1
-  max_x: 1
-  min_y: -1
-  max_y: 1 
-  min_z: 0
-  max_z: 0.6
+  min_x: -100
+  max_x: 100
+  min_y: -100
+  max_y: 100
+  min_z: -100
+  max_z: 100

@@ -69,7 +69,7 @@ def getCam2WorldTransform(camera_frame, world_frame):
 
     return tf_conversions.toMatrix(tf_conversions.fromMsg(pose))
 
-def transformCam2World(point, intrinsic, camera_frame, world_frame):
+def transformCam2World(point, intrinsic, E_cam_to_world):
         '''
         Transform a point from the camera frame to the robot frame
 
@@ -82,7 +82,6 @@ def transformCam2World(point, intrinsic, camera_frame, world_frame):
         Returns
             point (x, y, z): The point in the world frame
         '''
-        E_cam_to_world = getCam2WorldTransform(camera_frame, world_frame)
 
         x, y, z = point
 

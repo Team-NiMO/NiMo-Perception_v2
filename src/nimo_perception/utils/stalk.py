@@ -3,9 +3,6 @@ import warnings
 import pyransac3d as pyrsc
 from nimo_perception.utils import utils
 
-# TODO: Pass in parameters
-# TODO: Fix features getting swapped around
-
 class Stalk:
     def __init__(self, mask, score, depth_image, camera_intrinsic, config):
         self.valid = True
@@ -95,12 +92,11 @@ class Stalk:
 
                 # TODO: Use more pixels from the depth image to get a better depth (only if they are in the mask)
                 z = depth_image[int(y) - 1, int(x_center)] / 1000
-                # x = self.camera_width - x_center
-                # y = self.camera_height - y
                 x = x_center
                 y = y
 
-                stalk_features.append((x, y, z))
+                if z != 0:
+                    stalk_features.append((x, y, z))
 
         return stalk_features
 
@@ -172,8 +168,9 @@ class Stalk:
         '''
         
         world_features = []
+        E_cam_to_world = utils.getCam2WorldTransform(self.camera_frame, self.world_frame)
         for c_x, c_y, c_z in cam_features:
-           x, y, z = utils.transformCam2World((self.camera_width - c_x, self.camera_height - c_y, c_z), self.camera_intrinsic, self.camera_frame, self.world_frame)
+           x, y, z = utils.transformCam2World((self.camera_width - c_x, self.camera_height - c_y, c_z), self.camera_intrinsic, E_cam_to_world)
            world_features.append((x, y, z))
 
         return world_features
