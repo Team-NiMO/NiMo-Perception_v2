@@ -165,7 +165,6 @@ class StalkDetect:
         if self.visualize:
             for new_stalk in new_stalks:
                 self.visualizer.publishStalk(new_stalk.world_features)
-                self.visualizer.publishGraspPoint(new_stalk.grasp_point)
         
         if self.save_images:
             features_image = self.model.visualize(image, output)
@@ -239,6 +238,7 @@ class StalkDetect:
         grasp_msgs = []
         for grasp_point, weight in zip(clustered_grasp_points, clustered_weights):
             grasp_msgs.append(GraspPoint(position=grasp_point, weight=weight))
+            self.visualizer.publishGraspPoint((grasp_point.x, grasp_point.y, grasp_point.z))
 
         # Return with list
         return GetStalksResponse(success="DONE", grasp_points=grasp_msgs, num_frames=self.image_index+1)
