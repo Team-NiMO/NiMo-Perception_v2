@@ -81,8 +81,6 @@ class Visualizer:
         marker.header.stamp = rospy.Time.now()
         marker.id = self.id
         marker.points = [top_point, bottom_point]
-
-        self.id += 1
         
         self.stalk_publisher.publish(marker)
 
@@ -103,5 +101,7 @@ class Visualizer:
         marker.pose.position.y = y
         marker.pose.position.z = z
         marker.id = self.id
+
+        self.id += 1
 
         self.grasp_publisher.publish(marker)
