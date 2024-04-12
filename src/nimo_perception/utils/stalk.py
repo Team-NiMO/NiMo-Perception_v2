@@ -95,8 +95,7 @@ class Stalk:
                 x = x_center
                 y = y
 
-                if z != 0:
-                    stalk_features.append((x, y, z))
+                stalk_features.append((x, y, z))
 
         return stalk_features
 
@@ -191,6 +190,7 @@ class Stalk:
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             line = pyrsc.Line().fit(points, thresh=0.025, maxIteration=1000)
+            self.world_features = points[line[2]]
             if len(w) > 0 and not issubclass(w[-1].category, RuntimeWarning):
                 self.valid &= False
 
