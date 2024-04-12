@@ -9,6 +9,7 @@ camera:
   depth_topic: '/camera/depth/image_rect_raw'
   camera_frame: 'camera_link'
   world_frame: 'world'
+  camera_brightness: 0.9
 
 model:
   model: Mask_RCNN
@@ -22,7 +23,7 @@ stalk:
   optimal_grasp_height: 0.075
   cluster_threshold: 0.1
   minimum_stalk_width: 12
-  maximum_stalk_width: 45
+  maximum_stalk_width: 70
 
   min_x: -100
   max_x: 100

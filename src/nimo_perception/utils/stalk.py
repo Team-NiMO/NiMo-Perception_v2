@@ -246,7 +246,7 @@ class Stalk:
         '''
 
         # Filter based on score
-        if self.score < 0.9:
+        if self.score < 0.8:
             valid = False
 
         # Filter based on width

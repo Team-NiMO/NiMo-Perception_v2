@@ -66,6 +66,7 @@ class StalkDetect:
         self.camera_depth_topic = config["camera"]["depth_topic"]
         self.world_frame = config["camera"]["world_frame"]
         self.camera_frame = config["camera"]["camera_frame"]
+        self.camera_brightness = config["camera"]["brightness"]
 
         self.model_arch = config["model"]["model"]
         self.model_path = self.package_path + "/weights/" + config["model"]["weights"]
@@ -149,6 +150,9 @@ class StalkDetect:
         # Convert image messaages to arrays
         depth_image = np.array(self.cv_bridge.imgmsg_to_cv2(depth_image, desired_encoding="passthrough"), dtype=np.float32)
         image = self.cv_bridge.imgmsg_to_cv2(image, desired_encoding='bgr8')
+
+        # Decrease brightness
+        image = image * self.camera_brightness
 
         # Run detection and get feature points
         masks, output, scores = self.model.forward(image)
