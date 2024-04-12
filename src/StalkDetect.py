@@ -3,6 +3,7 @@ import cv2
 import yaml
 import rospy
 import rospkg
+import tf2_ros
 import numpy as np
 import message_filters
 from cv_bridge import CvBridge
@@ -64,6 +65,7 @@ class StalkDetect:
         self.camera_image_topic = config["camera"]["image_topic"]
         self.camera_depth_topic = config["camera"]["depth_topic"]
         self.world_frame = config["camera"]["world_frame"]
+        self.camera_frame = config["camera"]["camera_frame"]
 
         self.model_arch = config["model"]["model"]
         self.model_path = self.package_path + "/weights/" + config["model"]["weights"]
@@ -84,6 +86,7 @@ class StalkDetect:
         Returns
             sorted_grasp_points: The list of clustered grasp_points sorted from highest to lowest weight
             sorted_weights: The list of clustered weights sorted from highest to lowest
+            sorted_widths: The list of clustered widths sorted from highest to lowest weight
         '''
 
         # Determine clusters
@@ -103,10 +106,12 @@ class StalkDetect:
 
         # Combine clusters
         clustered_grasp_points = []
-        culstered_weights = []
+        clustered_weights = []
+        clustered_widths = []
         for label in np.unique(clustering_labels):
             grasp_points = [stalk.grasp_point for stalk in np.array(stalks)[np.nonzero(clustering_labels == label)]]
             weights = [stalk.weight for stalk in np.array(stalks)[np.nonzero(clustering_labels == label)]]
+            widths = [stalk.width for stalk in np.array(stalks)[np.nonzero(clustering_labels == label)]]
 
             grasp_avg = Point(x=np.mean([x for x, _, _ in grasp_points]),
                         y=np.mean([y for _, y, _ in grasp_points]),
@@ -114,14 +119,18 @@ class StalkDetect:
             
             weight_avg = np.mean(weights)
 
+            width_avg = np.mean(widths)
+
             clustered_grasp_points.append(grasp_avg)
-            culstered_weights.append(weight_avg)
+            clustered_weights.append(weight_avg)
+            clustered_widths.append(width_avg)
 
         # Sort representative stalks by weight
-        sorted_grasp_points = [x for _, x in sorted(zip(culstered_weights, clustered_grasp_points), key=lambda pair: pair[0], reverse=True)]
-        sorted_weights = sorted(culstered_weights, reverse=True)
+        sorted_grasp_points = [x for _, x in sorted(zip(clustered_weights, clustered_grasp_points), key=lambda pair: pair[0], reverse=True)]
+        sorted_widths = [x for _, x in sorted(zip(clustered_weights, clustered_widths), key=lambda pair: pair[0], reverse=True)]
+        sorted_weights = sorted(clustered_weights, reverse=True)
 
-        return sorted_grasp_points, sorted_weights
+        return sorted_grasp_points, sorted_weights, sorted_widths
 
     def getStalksCallback(self, image, depth_image):
         '''
@@ -169,16 +178,6 @@ class StalkDetect:
         for new_stalk in new_stalks:
             self.stalks.append(new_stalk)
 
-        self.image_index += 1
-
-    def getWidthCallback(self, image, depth_image):
-        '''
-        Determine the width of the closest cornstalk for the current frame
-
-        Parameters
-            image: The current RGB frame
-            depth_image: The current depth frame
-        '''
         self.image_index += 1
 
     def getStalks(self, req: GetStalksRequest) -> GetStalksResponse:
@@ -235,7 +234,7 @@ class StalkDetect:
             return GetStalksResponse(success='REPOSITION', num_frames=self.image_index + 1)
         
         # Cluster stalks + sort
-        clustered_grasp_points, clustered_weights = self.clusterStalks(self.stalks)
+        clustered_grasp_points, clustered_weights, _ = self.clusterStalks(self.stalks)
 
         grasp_msgs = []
         for grasp_point, weight in zip(clustered_grasp_points, clustered_weights):
@@ -261,6 +260,63 @@ class StalkDetect:
         '''
 
         if self.verbose: rospy.loginfo('Received a GetWidths request for {} frames with timeout {} seconds'.format(req.num_frames, req.timeout))
+
+        # Check camera connection
+        if not utils.isCameraRunning(self.camera_info_topic):
+            rospy.logerr('Camera info not found, so camera is likely not running!')
+            return GetWidthResponse(success='ERROR', num_frames=0)
+        elif self.camera_intrinsic is None:
+            self.camera_intrinsic = utils.getCameraInfo(self.camera_info_topic)
+
+        # Reset
+        self.stalks = []
+        self.image_index = 0
+        try:
+            self.inference_index = max([int(f[len("FEATURES"):].split("-")[0]) for f in os.listdir(self.package_path+"/output")]) + 1
+        except:
+            self.inference_index = 0
+
+        # Setup callbacks
+        image_subscriber = message_filters.Subscriber(self.camera_image_topic, Image)
+        depth_susbscriber = message_filters.Subscriber(self.camera_depth_topic, Image)
+        ts = message_filters.ApproximateTimeSynchronizer([image_subscriber, depth_susbscriber], queue_size=5, slop=0.2)
+        ts.registerCallback(self.getStalksCallback)
+
+        # Wait until images have been captured
+        start = rospy.get_rostime()
+        while self.image_index < req.num_frames and (rospy.get_rostime() - start).to_sec() < req.timeout:
+            rospy.sleep(0.1)
+
+        # Destroy callbacks
+        image_subscriber.unregister()
+        depth_susbscriber.unregister()
+        del ts
+
+        if len(self.stalks) == 0:
+            rospy.logwarn('No valid stalks detected in any frame for this service request')
+            return GetWidthResponse(success='ERROR', num_frames=self.image_index + 1)
+
+        # Cluster stalks + sort
+        clustered_grasp_points, _, clustered_widths = self.clusterStalks(self.stalks)
+
+        # Get location of the camera
+        tfBuffer = tf2_ros.Buffer()
+        tf2_ros.TransformListener(tfBuffer)
+
+        world_to_cam = tfBuffer.lookup_transform(self.world_frame, self.camera_frame, rospy.Time(0), rospy.Duration.from_sec(0.5)).transform
+        camera_location = (world_to_cam.x, world_to_cam.y, world_to_cam.z)
+
+        # Find closest stalk to camera
+        dists = []
+        for grasp_point in clustered_grasp_points:
+            dists.append(np.linalg.norm(np.array(camera_location) - np.array(grasp_point)))
+
+        # If closest stalk is within threshold, return width
+        if min(dists) < 0.25:
+            return GetWidthResponse(success="DONE", width=clustered_widths[np.argmin(dists)], num_frames=self.image_index+1)
+        else:
+            rospy.logwarn('Nearest stalk is not detected')
+            return GetWidthResponse(success='ERROR', num_frames=self.image_index + 1)
 
 if __name__ == "__main__":
     rospy.init_node('nimo_perception')
