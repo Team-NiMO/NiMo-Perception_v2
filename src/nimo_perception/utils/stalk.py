@@ -14,21 +14,27 @@ class Stalk:
 
         # Get stalk features in camera frame
         self.cam_features = self.getFeatures(mask, depth_image)
+        if not self.valid: return
 
         # Get stalk width
         self.width = self.getWidth(self.cam_features, mask, depth_image)
+        if not self.valid: return
 
         # Transform features to world frame
         self.world_features = self.transformFeatures(self.cam_features)
+        if not self.valid: return
 
         # Get stalk line
         self.stalk_line = self.getLine(self.world_features)
+        if not self.valid: return
         
         # Get grasp point
         self.grasp_point = self.getGrasp(self.world_features)
+        if not self.valid: return
         
-        # GET weight
+        # Get weight
         self.weight = self.getWeight()
+        if not self.valid: return
 
         self.valid = self.isValid(self.valid)
 
@@ -192,7 +198,10 @@ class Stalk:
             line = pyrsc.Line().fit(points, thresh=0.025, maxIteration=1000)
             self.world_features = points[line[2]]
             if len(w) > 0 and not issubclass(w[-1].category, RuntimeWarning):
-                self.valid &= False
+                self.valid = False
+
+            if len(self.world_features) == 0:
+                self.valid = False
 
         return line
     
