@@ -208,8 +208,8 @@ class Stalk:
         '''
 
         heights = np.array([z for _, _, z in stalk_features])
-        _, _, z = stalk_features[np.argmin(heights)]
-        z += self.optimal_grasp_height
+        _, _, z = stalk_features[np.argmax(heights)]
+        z -= self.optimal_grasp_height
 
         normalized_direction = self.stalk_line[0] / np.linalg.norm(self.stalk_line[0])
         t = (z - self.stalk_line[1][2]) / normalized_direction[2]

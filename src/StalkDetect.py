@@ -303,13 +303,14 @@ class StalkDetect:
         tfBuffer = tf2_ros.Buffer()
         tf2_ros.TransformListener(tfBuffer)
 
-        world_to_cam = tfBuffer.lookup_transform(self.world_frame, self.camera_frame, rospy.Time(0), rospy.Duration.from_sec(0.5)).transform
+        world_to_cam = tfBuffer.lookup_transform(self.world_frame, self.camera_frame, rospy.Time(0), rospy.Duration.from_sec(0.5)).transform.translation
         camera_location = (world_to_cam.x, world_to_cam.y, world_to_cam.z)
 
         # Find closest stalk to camera
         dists = []
         for grasp_point in clustered_grasp_points:
-            dists.append(np.linalg.norm(np.array(camera_location) - np.array(grasp_point)))
+            point = (grasp_point.x, grasp_point.y, grasp_point.z)
+            dists.append(np.linalg.norm(np.array(camera_location) - np.array(point)))
 
         # If closest stalk is within threshold, return width
         if min(dists) < 0.25:
