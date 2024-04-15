@@ -9,25 +9,25 @@ camera:
   depth_topic: '/camera/depth/image_rect_raw'
   camera_frame: 'camera_link'
   world_frame: 'world'
-  camera_brightness: 0.9
+  brightness: 0.75
 
 model:
   model: Mask_RCNN
   weights: 'model_field_day1.pth'
-  score_threshold: 0.6
+  score_threshold: 0.9
   device: 0
 
 stalk:
   minimum_mask_area: 30
   feature_point_offset: 10
-  optimal_grasp_height: 0.075
+  optimal_grasp_height: 0.06
   cluster_threshold: 0.1
   minimum_stalk_width: 12
   maximum_stalk_width: 70
 
   min_x: -100
   max_x: 100
-  min_y: -100
-  max_y: 100
-  min_z: -100
-  max_z: 100
+  min_y: -0.7
+  max_y: 0
+  min_z: 0
+  max_z: 0.8
