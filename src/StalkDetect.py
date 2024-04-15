@@ -165,7 +165,6 @@ class StalkDetect:
             if new_stalk.valid:
                 new_stalks.append(new_stalk)
 
-        self.visualizer.clearMarkers()
         if self.visualize:
             for new_stalk in new_stalks:
                 self.visualizer.publishStalk(new_stalk.world_features)
@@ -275,6 +274,7 @@ class StalkDetect:
         # Reset
         self.stalks = []
         self.image_index = 0
+        self.visualizer.clearMarkers()
         try:
             self.inference_index = max([int(f[len("FEATURES"):].split("-")[0]) for f in os.listdir(self.package_path+"/output")]) + 1
         except:
