@@ -1,30 +1,31 @@
 debug:
-  verbose: True
-  visualize: True
-  save_images: True
+  verbose: True                              # Whether to log information and warnings
+  visualize: True                            # Whether to publish the detections to markers in RViz
+  save_images: True                          # Whether to save the masked images with feature points to /outputs
 
 camera:
-  info_topic: '/camera/color/camera_info'
-  image_topic: '/camera/color/image_raw'
-  depth_topic: '/camera/depth/image_rect_raw'
-  camera_frame: 'camera_link'
-  world_frame: 'world'
+  info_topic: '/camera/color/camera_info'     # The camera info topic for the RGB-D camera
+  image_topic: '/camera/color/image_raw'      # The image topic for the RGB-D camera
+  depth_topic: '/camera/depth/image_rect_raw' # The depth topic for the RGB-D camera
+  camera_frame: 'camera_link'                 # The frame associated with the camera
+  world_frame: 'world'                        # The frame in which detections should be published
   brightness: 0.75
 
 model:
-  model: Mask_RCNN
-  weights: 'model_field_day1.pth'
-  score_threshold: 0.9
-  device: 0
+  model: Mask_RCNN                            # The architecture to use for detection (Supported Mask R-CNN)
+  weights: 'model_field_day1.pth'             # The weights to use for the selected model
+  score_threshold: 0.9                        # The threshold to return detections
+  device: 0                                   # Which GPU to run the model on (-1 for CPU)
 
 stalk:
-  minimum_mask_area: 30
-  feature_point_offset: 10
-  optimal_grasp_height: 0.06
-  cluster_threshold: 0.1
-  minimum_stalk_width: 12
-  maximum_stalk_width: 70
+  minimum_mask_area: 30                       # The minimum mask area to count as a stalk
+  feature_point_offset: 10                    # The offset in pixels between each feature
+  optimal_grasp_height: 0.06                  # The optimal grasp height above the base of the cornstalk (m)
+  cluster_threshold: 0.1                      # The threshold to call multiple detections the same cornstalk (m)
+  minimum_stalk_width: 12                     # The minimum stalk width graspable (mm)
+  maximum_stalk_width: 70                     # The maximum stalk width graspable (mm)
 
+  # The limits of the workspace in the world frame (m)
   min_x: -100
   max_x: 100
   min_y: -0.7
