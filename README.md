@@ -30,23 +30,39 @@ There are two service calls:
     - num_frames: The number of frames to run inference on
     - timeout: The timeout (s) to return error
 - Returns:
-    - success: The success of the 
+    - success: The success of the operation (SUCCESS / ERROR / REPOSITION)
     - num_frames: The number of frames inference was run on
-    - grasp_points: A list of grasp points (position and weight) ordered from highest to lowest weight
+    - grasp_points: A list of grasp points (position in m and weight) ordered from highest to lowest weight (relative score of the stalk based on confidence and width)
 
 `GetWidth` - Determine the width of the closest stalk
 - Inputs:
     - num_frames: The number of frames to run inference on
     - timeout: The timeout (s) to return error
 - Returns:
-    - success: The success of the 
+    - success: The success of the operation (SUCCESS / ERROR / REPOSITION)
     - num_frames: The number of frames inference was run on
-    - width: The width of the closest stalk
+    - width: The width of the closest stalk (m)
 
 ## Other
+### Camera calibration
+If the camera needs to be calibrated, refer to [calibration.md](docs/calibration.md)
+
 ### Future improvements
 - Adding more architectures to [models](src/nimo_perception/models)
 - Calibration for width detection
+
+## Common Issues
+**`This repository is over its data quota.`**
+
+Alternatively, the model can be downloaded from [this link](https://drive.google.com/file/d/19bDrrN4pFZPGfqd4r-NZjJYxa13hHlI-/view?usp=share_link), replacing the existing model_field_day1.pth in the [weights](/weights/) folder.
+
+**`numpy.ndarray size changed, may indicate binary incompatibility.`**
+
+Upgrade numpy and rerun node
+
+```
+pip install --upgrade numpy
+```
 
 ## Acknowledgements
 - [Aaron Berger](https://github.com/aaronzberger) for his work on [CMU_Find_Stalk](https://github.com/aaronzberger/CMU_Find_Stalk) laying the groundwork for this repository
