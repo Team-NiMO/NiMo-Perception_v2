@@ -66,6 +66,7 @@ If the camera needs to be calibrated, refer to [calibration.md](docs/calibration
 ### Future improvements
 - Adding more architectures to [models](src/nimo_perception/models)
 - Calibration for width detection
+- Average stalk objects instead of grasp points
 
 ## Common Issues
 **`This repository is over its data quota.`**
