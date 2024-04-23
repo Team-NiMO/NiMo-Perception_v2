@@ -96,7 +96,8 @@ class StalkDetect:
             min_distance = float('inf')
             min_cluster = 0
             for i in range(len(clustering_labels)):
-                dist = np.linalg.norm(np.array(stalk.grasp_point) - np.array(stalks[i].grasp_point))
+                # NOTE: Not accounting for z, because the same stalk may have the same x & y, but different z
+                dist = np.linalg.norm(np.array(stalk.grasp_point[:2]) - np.array(stalks[i].grasp_point[:2]))
                 if dist < min_distance:
                     min_distance = dist
                     min_cluster = clustering_labels[i]
@@ -114,9 +115,11 @@ class StalkDetect:
             weights = [stalk.weight for stalk in np.array(stalks)[np.nonzero(clustering_labels == label)]]
             widths = [stalk.width for stalk in np.array(stalks)[np.nonzero(clustering_labels == label)]]
 
-            grasp_avg = Point(x=np.mean([x for x, _, _ in grasp_points]),
-                        y=np.mean([y for _, y, _ in grasp_points]),
-                        z=np.mean([z for _, _, z in grasp_points]))
+            # NOTE: Not robust to low negative outliers (could detect false low grasp point)
+            min_z_idx = np.argmin([z for _, _, z in grasp_points])
+            grasp_avg = Point(x=grasp_points[min_z_idx][0],
+                              y=grasp_points[min_z_idx][1],
+                              z=grasp_points[min_z_idx][2])
             
             weight_avg = np.mean(weights)
 
