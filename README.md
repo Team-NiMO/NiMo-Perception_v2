@@ -43,6 +43,22 @@ There are two service calls:
     - num_frames: The number of frames inference was run on
     - width: The width of the closest stalk (m)
 
+## Visualization
+
+In the [configuration file](/config/default.yaml), there is an argument called `visualize`. This argument determines whether to publish visualization markers to RViz. There are two types of visualization markers published
+
+`stalk_line` - A green line describing the detected stalk
+
+`grasp_point` - A pink sphere describing the selected grasp point on the stalk
+
+[RVIZ IMAGE]
+
+There is also an argument in the [configuration file](/config/default.yaml) called `save_images`. This saves the image captured with the masks from the model with the feature points overlayed on top to the folder [outupt](/output).
+
+[VISUALIZATION IMAGE]
+
+If this folder is not already created, you may have to create it for images to save.
+
 ## Other
 ### Camera calibration
 If the camera needs to be calibrated, refer to [calibration.md](docs/calibration.md)
