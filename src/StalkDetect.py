@@ -164,34 +164,41 @@ class StalkDetect:
         depth_image = np.array(self.cv_bridge.imgmsg_to_cv2(depth_image, desired_encoding="passthrough"), dtype=np.float32)
         image = self.cv_bridge.imgmsg_to_cv2(image, desired_encoding='bgr8')
 
-        # Decrease brightness
-        image = image * self.camera_brightness
+        depth_image[depth_image > 0.1] = 0
+        depth_image = depth_image / np.max(depth_image) * 255
+        depth_image = depth_image.astype(np.uint8)
 
-        # Run detection and get feature points
-        masks, output, scores = self.model.forward(image)
+        cv2.imwrite(self.package_path+"/output/FEATURES{}-{}.png".format(self.inference_index, self.image_index), image)
+        cv2.imwrite(self.package_path+"/output/DEPTH{}-{}.png".format(self.inference_index, self.image_index), depth_image)
 
-        # Create stalk objects and add to running list
-        for mask, score in zip(masks, scores):
-            new_stalk = stalk.Stalk(mask, score, depth_image, self.camera_intrinsic, self.config)
+        # # Decrease brightness
+        # image = image * self.camera_brightness
 
-            # Append to list if stalks are valid
-            if new_stalk.valid:
-                new_stalks.append(new_stalk)
+        # # Run detection and get feature points
+        # masks, output, scores = self.model.forward(image)
 
-        if self.visualize:
-            for new_stalk in new_stalks:
-                self.visualizer.publishStalk(new_stalk.world_features)
+        # # Create stalk objects and add to running list
+        # for mask, score in zip(masks, scores):
+        #     new_stalk = stalk.Stalk(mask, score, depth_image, self.camera_intrinsic, self.config)
+
+        #     # Append to list if stalks are valid
+        #     if new_stalk.valid:
+        #         new_stalks.append(new_stalk)
+
+        # if self.visualize:
+        #     for new_stalk in new_stalks:
+        #         self.visualizer.publishStalk(new_stalk.world_features)
         
-        if self.save_images:
-            features_image = self.model.visualize(image, output)
-            for new_stalk in new_stalks:
-                for x, y, _ in new_stalk.cam_features:
-                    cv2.circle(features_image, (int(x), int(y)), 2, (255, 255, 255), -1)
+        # if self.save_images:
+        #     features_image = self.model.visualize(image, output)
+        #     for new_stalk in new_stalks:
+        #         for x, y, _ in new_stalk.cam_features:
+        #             cv2.circle(features_image, (int(x), int(y)), 2, (255, 255, 255), -1)
 
-            cv2.imwrite(self.package_path+"/output/FEATURES{}-{}.png".format(self.inference_index, self.image_index), features_image)
+        #     cv2.imwrite(self.package_path+"/output/FEATURES{}-{}.png".format(self.inference_index, self.image_index), features_image)
 
-        for new_stalk in new_stalks:
-            self.stalks.append(new_stalk)
+        # for new_stalk in new_stalks:
+        #     self.stalks.append(new_stalk)
 
         self.image_index += 1
 
@@ -282,7 +289,7 @@ class StalkDetect:
                               - width - The width of the cornstalk in mm
         '''
 
-        if self.verbose: rospy.loginfo('Received a GetWidths request for {} frames with timeout {} seconds'.format(req.num_frames, req.timeout))
+        if self.verbose: rospy.loginfo('Received a GetWidth request for {} frames with timeout {} seconds'.format(req.num_frames, req.timeout))
 
         # Check camera connection
         if not utils.isCameraRunning(self.camera_info_topic):
