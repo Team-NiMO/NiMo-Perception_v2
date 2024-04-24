@@ -2,7 +2,7 @@
 A method to detect cornstalks, determine their grasp points, and determine their widths for optimal insertion of a small sensor. This repository is an extension of [CMU_Find_Stalk](https://github.com/aaronzberger/CMU_Find_Stalk) by Aaron Berger.
 
 ## Installation
-First, clone the repository and pull the weights file for Mask R-CNN.
+First, clone the repository into the `src` folder of your ROS workspace and pull the weights file for Mask R-CNN.
 ```
 git clone git@github.com:Team-NiMO/NiMo-Perception_v2.git
 cd NiMo-Perception_v2
@@ -14,7 +14,20 @@ Next, install the python requirements
 pip install -r requirements.txt
 pip install 'git+https://github.com/facebookresearch/detectron2.git'
 ```
-Finally, update the [configuration file](config/default.yaml) if necessary.
+Then, update the [configuration file](config/default.yaml) if necessary.
+
+If using an Intel RealSense camera, use [this link](https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md#installing-the-packages) to install the RealSense SDK. To confirm installation, run `realsense-viewer` in the terminal with the camera connected.
+
+Then clone the [realsense-ros]() repository into the `src` folder of your ROS workspace, switch to the `ros1-legacy` branch and make the workspace.
+
+```
+git clone git@github.com:IntelRealSense/realsense-ros.git
+cd realsense-ros
+git checkout ros1-legacy
+
+cd ../../
+catkin_make
+```
 
 ## Use
 To run the node, you must launch the camera node and run `StalkDetect.py`. This launch file has been created for for the realsense camera.
