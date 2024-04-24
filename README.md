@@ -70,6 +70,8 @@ In the [configuration file](/config/default.yaml), there is an argument called `
 
 There is also an argument in the [configuration file](/config/default.yaml) called `save_images`. This saves the image captured with the masks from the model with the feature points overlayed on top to the folder [outupt](/output).
 
+If only the mask appears without the feature points, this means that the object was detected by the model, but filtered out as a false detection.
+
 <img src="https://github.com/Team-NiMO/NiMo-Perception_v2/blob/main/docs/visualization.png" width="650">
 
 If this folder is not already created, you may have to create it for images to save.
