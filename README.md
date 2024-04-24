@@ -51,7 +51,7 @@ In the [configuration file](/config/default.yaml), there is an argument called `
 
 `grasp_point` - A pink sphere describing the selected grasp point on the stalk
 
-[RVIZ IMAGE]
+<img src="https://github.com/t-detlefsen/MTP-Localization/blob/main/docs/rviz.png" width="650">
 
 There is also an argument in the [configuration file](/config/default.yaml) called `save_images`. This saves the image captured with the masks from the model with the feature points overlayed on top to the folder [outupt](/output).
 
