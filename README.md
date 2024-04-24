@@ -18,7 +18,7 @@ Then, update the [configuration file](config/default.yaml) if necessary.
 
 If using an Intel RealSense camera, use [this link](https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md#installing-the-packages) to install the RealSense SDK. To confirm installation, run `realsense-viewer` in the terminal with the camera connected.
 
-Then clone the [realsense-ros]() repository into the `src` folder of your ROS workspace, switch to the `ros1-legacy` branch and make the workspace.
+Then clone the [realsense-ros](https://github.com/IntelRealSense/realsense-ros) repository into the `src` folder of your ROS workspace, switch to the `ros1-legacy` branch and make the workspace.
 
 ```
 git clone git@github.com:IntelRealSense/realsense-ros.git
