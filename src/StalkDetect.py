@@ -30,12 +30,22 @@ class StalkDetect:
         else: 
             self.camera_intrinsic = utils.getCameraInfo(self.camera_info_topic)
 
+        # Check world transform
+        try:
+            utils.transformCam2World(self.camera_frame, self.world_frame)
+        except:
+            rospy.logwarn('Camera to world transform not found')
+
         # Initialize variables
         self.cv_bridge = CvBridge()
         self.visualizer = visualize.Visualizer(self.world_frame)
 
         if self.model_arch == "Mask_RCNN":
-            self.model = Mask_RCNN.Mask_RCNN(self.model_path, self.model_threshold, self.model_device)
+            try:
+                self.model = Mask_RCNN.Mask_RCNN(self.model_path, self.model_threshold, self.model_device)
+            except RuntimeError as e:
+                rospy.logerr("Device {} not available, set device to -1 in default.yaml to use CPU".format(self.model_device))
+                raise Exception("Device {} not available, set device to -1 in default.yaml to use CPU".format(self.model_device))
         else:
             rospy.logerr("Model {} not implemented".format(self.model_arch))
             raise NotImplementedError
@@ -210,6 +220,13 @@ class StalkDetect:
         elif self.camera_intrinsic is None:
             self.camera_intrinsic = utils.getCameraInfo(self.camera_info_topic)
 
+        # Check world transform
+        try:
+            utils.transformCam2World(self.camera_frame, self.world_frame)
+        except:
+            rospy.logerr('Camera to world transform not found')
+            return GetStalksResponse(success='ERROR', num_frames=0)
+
         # Reset
         self.stalks = []
         self.image_index = 0
@@ -273,6 +290,13 @@ class StalkDetect:
             return GetWidthResponse(success='ERROR', num_frames=0)
         elif self.camera_intrinsic is None:
             self.camera_intrinsic = utils.getCameraInfo(self.camera_info_topic)
+
+        # Check world transform
+        try:
+            utils.transformCam2World(self.camera_frame, self.world_frame)
+        except:
+            rospy.logerr('Camera to world transform not found')
+            return GetStalksResponse(success='ERROR', num_frames=0)
 
         # Reset
         self.stalks = []
