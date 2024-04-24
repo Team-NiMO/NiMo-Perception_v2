@@ -32,7 +32,7 @@ class StalkDetect:
 
         # Check world transform
         try:
-            utils.transformCam2World(self.camera_frame, self.world_frame)
+            utils.getCam2WorldTransform(self.camera_frame, self.world_frame)
         except:
             rospy.logwarn('Camera to world transform not found')
 
@@ -222,7 +222,7 @@ class StalkDetect:
 
         # Check world transform
         try:
-            utils.transformCam2World(self.camera_frame, self.world_frame)
+            utils.getCam2WorldTransform(self.camera_frame, self.world_frame)
         except:
             rospy.logerr('Camera to world transform not found')
             return GetStalksResponse(success='ERROR', num_frames=0)
@@ -293,7 +293,7 @@ class StalkDetect:
 
         # Check world transform
         try:
-            utils.transformCam2World(self.camera_frame, self.world_frame)
+            utils.getCam2WorldTransform(self.camera_frame, self.world_frame)
         except:
             rospy.logerr('Camera to world transform not found')
             return GetStalksResponse(success='ERROR', num_frames=0)
