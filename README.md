@@ -51,11 +51,13 @@ In the [configuration file](/config/default.yaml), there is an argument called `
 
 `grasp_point` - A pink sphere describing the selected grasp point on the stalk
 
-<img src="https://github.com/t-detlefsen/MTP-Localization/blob/main/docs/rviz.png" width="650">
+<img src="https://github.com/Team-NiMO/NiMo-Perception_v2/blob/main/docs/rviz.png" width="650">
+
+#### Note: Since the arm is mounted upside-down, so is the world frame and all visualizations
 
 There is also an argument in the [configuration file](/config/default.yaml) called `save_images`. This saves the image captured with the masks from the model with the feature points overlayed on top to the folder [outupt](/output).
 
-[VISUALIZATION IMAGE]
+<img src="https://github.com/Team-NiMO/NiMo-Perception_v2/blob/main/docs/visualization.png" width="650">
 
 If this folder is not already created, you may have to create it for images to save.
 
