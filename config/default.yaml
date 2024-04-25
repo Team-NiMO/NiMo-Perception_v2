@@ -1,6 +1,6 @@
 debug:
   verbose: True                              # Whether to log information and warnings
-  visualize: True                            # Whether to publish the detections to markers in RViz
+  visualize: False                            # Whether to publish the detections to markers in RViz
   save_images: True                          # Whether to save the masked images with feature points to /outputs
 
 camera:

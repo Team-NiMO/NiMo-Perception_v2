@@ -164,41 +164,55 @@ class StalkDetect:
         depth_image = np.array(self.cv_bridge.imgmsg_to_cv2(depth_image, desired_encoding="passthrough"), dtype=np.float32)
         image = self.cv_bridge.imgmsg_to_cv2(image, desired_encoding='bgr8')
 
-        depth_image[depth_image > 0.1] = 0
-        depth_image = depth_image / np.max(depth_image) * 255
-        depth_image = depth_image.astype(np.uint8)
+        # Decrease brightness
+        image = image * self.camera_brightness
 
-        cv2.imwrite(self.package_path+"/output/FEATURES{}-{}.png".format(self.inference_index, self.image_index), image)
-        cv2.imwrite(self.package_path+"/output/DEPTH{}-{}.png".format(self.inference_index, self.image_index), depth_image)
+        image = cv2.copyMakeBorder(
+            image,
+            top=self.border,
+            bottom=self.border,
+            left=self.border,
+            right=self.border,
+            borderType=cv2.BORDER_CONSTANT,
+            value=[0, 0, 0]
+        )
+        depth_image = cv2.copyMakeBorder(
+            depth_image,
+            top=self.border,
+            bottom=self.border,
+            left=self.border,
+            right=self.border,
+            borderType=cv2.BORDER_CONSTANT,
+            value=[0]
+        )
 
-        # # Decrease brightness
-        # image = image * self.camera_brightness
+        # Run detection and get feature points
+        masks, output, scores = self.model.forward(image)
 
-        # # Run detection and get feature points
-        # masks, output, scores = self.model.forward(image)
+        # Create stalk objects and add to running list
+        for mask, score in zip(masks, scores):
+            new_stalk = stalk.Stalk(mask, score, depth_image, self.camera_intrinsic, self.config)
 
-        # # Create stalk objects and add to running list
-        # for mask, score in zip(masks, scores):
-        #     new_stalk = stalk.Stalk(mask, score, depth_image, self.camera_intrinsic, self.config)
+            self.all_stalks.append(new_stalk)
 
-        #     # Append to list if stalks are valid
-        #     if new_stalk.valid:
-        #         new_stalks.append(new_stalk)
+            # Append to list if stalks are valid
+            if new_stalk.valid:
+                new_stalks.append(new_stalk)
 
-        # if self.visualize:
-        #     for new_stalk in new_stalks:
-        #         self.visualizer.publishStalk(new_stalk.world_features)
+        if self.visualize:
+            for new_stalk in new_stalks:
+                self.visualizer.publishStalk(new_stalk.world_features)
         
-        # if self.save_images:
-        #     features_image = self.model.visualize(image, output)
-        #     for new_stalk in new_stalks:
-        #         for x, y, _ in new_stalk.cam_features:
-        #             cv2.circle(features_image, (int(x), int(y)), 2, (255, 255, 255), -1)
+        if self.save_images:
+            features_image = self.model.visualize(image, output)
+            for new_stalk in new_stalks:
+                for x, y, _ in new_stalk.cam_features:
+                    cv2.circle(features_image, (int(x), int(y)), 2, (255, 255, 255), -1)
 
-        #     cv2.imwrite(self.package_path+"/output/FEATURES{}-{}.png".format(self.inference_index, self.image_index), features_image)
+            cv2.imwrite(self.package_path+"/output/FEATURES{}-{}.png".format(self.inference_index, self.image_index), features_image)
 
-        # for new_stalk in new_stalks:
-        #     self.stalks.append(new_stalk)
+        for new_stalk in new_stalks:
+            self.stalks.append(new_stalk)
 
         self.image_index += 1
 
@@ -236,7 +250,9 @@ class StalkDetect:
 
         # Reset
         self.stalks = []
+        self.all_stalks = []
         self.image_index = 0
+        self.border = 0
         try:
             self.inference_index = max([int(f[len("FEATURES"):].split("-")[0]) for f in os.listdir(self.package_path+"/output")]) + 1
         except:
@@ -307,7 +323,9 @@ class StalkDetect:
 
         # Reset
         self.stalks = []
+        self.all_stalks = []
         self.image_index = 0
+        self.border = 200
         self.visualizer.clearMarkers()
         try:
             self.inference_index = max([int(f[len("FEATURES"):].split("-")[0]) for f in os.listdir(self.package_path+"/output")]) + 1
@@ -330,32 +348,13 @@ class StalkDetect:
         depth_susbscriber.unregister()
         del ts
 
-        if len(self.stalks) == 0:
+        if len(self.all_stalks) == 0:
             rospy.logwarn('No valid stalks detected in any frame for this service request')
             return GetWidthResponse(success='ERROR', num_frames=self.image_index + 1)
 
-        # Cluster stalks + sort
-        clustered_grasp_points, _, clustered_widths = self.clusterStalks(self.stalks)
+        widths = [stalk.width for stalk in self.all_stalks]
 
-        # Get location of the camera
-        tfBuffer = tf2_ros.Buffer()
-        tf2_ros.TransformListener(tfBuffer)
-
-        world_to_cam = tfBuffer.lookup_transform(self.world_frame, self.camera_frame, rospy.Time(0), rospy.Duration.from_sec(0.5)).transform.translation
-        camera_location = (world_to_cam.x, world_to_cam.y, world_to_cam.z)
-
-        # Find closest stalk to camera
-        dists = []
-        for grasp_point in clustered_grasp_points:
-            point = (grasp_point.x, grasp_point.y, grasp_point.z)
-            dists.append(np.linalg.norm(np.array(camera_location) - np.array(point)))
-
-        # If closest stalk is within threshold, return width
-        if min(dists) < 0.25:
-            return GetWidthResponse(success="DONE", width=clustered_widths[np.argmin(dists)], num_frames=self.image_index+1)
-        else:
-            rospy.logwarn('Nearest stalk is not detected')
-            return GetWidthResponse(success='ERROR', num_frames=self.image_index + 1)
+        return GetWidthResponse(success="DONE", width=np.mean(np.array(widths)), num_frames=self.image_index+1)
 
 if __name__ == "__main__":
     rospy.init_node('nimo_perception')

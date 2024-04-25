@@ -159,6 +159,7 @@ class Stalk:
                 widths.append(count * np.median(depths) * 0.0036) # NOTE: MAGIC NUM FIX LATER
                 px_widths.append(count)
 
+        self.px_width = np.median(px_widths)
         return np.median(widths)
     
     def transformFeatures(self, cam_features):
