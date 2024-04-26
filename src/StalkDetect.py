@@ -4,6 +4,7 @@ import yaml
 import rospy
 import rospkg
 import tf2_ros
+import datetime
 import numpy as np
 import message_filters
 from cv_bridge import CvBridge
@@ -189,6 +190,10 @@ class StalkDetect:
                     cv2.circle(features_image, (int(x), int(y)), 2, (255, 255, 255), -1)
 
             cv2.imwrite(self.package_path+"/output/FEATURES{}-{}.png".format(self.inference_index, self.image_index), features_image)
+            
+            time_str = datetime.datetime.now().strftime("%d-%m-%Y-%H:%M:%S")
+            cv2.imwrite(self.package_path+"/data/IMAGE_{}.png".format(time_str), image)
+            np.save(self.package_path+"/data/DEPTH_{}.png".format(time_str), depth_image)
 
         for new_stalk in new_stalks:
             self.stalks.append(new_stalk)
