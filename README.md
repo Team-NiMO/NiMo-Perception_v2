@@ -102,10 +102,12 @@ pip install --upgrade numpy
 
 There are three posisble reasons for this:
 - No cornstalks are visible in the camera frame
-    - Check RViz to see whether the cornstalks are in frame
+    - Check the camera feed in RViz to see whether the cornstalks are in frame
 - The model does not detect any cornstalks
-    - Check the [output](/output)
+    - Check the [output](/output) folder to see if the masks appear on the cornstalks
 - The detected cornstalks are being filtered
+    - Check the parameters in [default.yaml](/config/default.yaml) to see if the parameters for filtering stalks are reasonable
+    - Check [stalk.py](/src/nimo_perception/utils/stalk.py) in `isValid()` to determine which parameter specifically is filtering out the conrstalk
 
 ## Acknowledgements
 - [Aaron Berger](https://github.com/aaronzberger) for his work on [CMU_Find_Stalk](https://github.com/aaronzberger/CMU_Find_Stalk) laying the groundwork for this repository
