@@ -98,6 +98,15 @@ Upgrade numpy and rerun node
 pip install --upgrade numpy
 ```
 
+**`No valid stalks detected`**
+
+There are three posisble reasons for this:
+- No cornstalks are visible in the camera frame
+    - Check RViz to see whether the cornstalks are in frame
+- The model does not detect any cornstalks
+    - Check the [output](/output)
+- The detected cornstalks are being filtered
+
 ## Acknowledgements
 - [Aaron Berger](https://github.com/aaronzberger) for his work on [CMU_Find_Stalk](https://github.com/aaronzberger/CMU_Find_Stalk) laying the groundwork for this repository
 - [Mark (Moonyoung) Lee](https://github.com/markmlee) for his assistance and advice
