@@ -1,3 +1,4 @@
+import rospy
 import numpy as np
 import warnings
 import pyransac3d as pyrsc
@@ -60,6 +61,7 @@ class Stalk:
 
         self.camera_frame = config["camera"]["camera_frame"]
         self.world_frame = config["camera"]["world_frame"]
+        self.verbose = config["debug"]["verbose"]
 
     def getFeatures(self, mask, depth_image):
         '''
@@ -248,19 +250,26 @@ class Stalk:
         # Filter based on score
         if self.score < 0.8:
             valid = False
+            if self.verbose: rospy.logwarn("Score too low")
 
         # Filter based on width
         if self.width < self.minimum_stalk_width or self.width > self.maximum_stalk_width:
             valid = False
+            rospy.logwarn(self.width)
+            if self.verbose: rospy.logwarn("Width out of range")
             
         # Filter based on grasp point location  
-        if self.grasp_point[0] < self.minimum_x or self.grasp_point[0] > self.maximum_x:
+        if self.grasp_point[0] < abs(self.minimum_x) or self.grasp_point[0] > self.maximum_x:
             valid = False
+            if self.verbose: rospy.logwarn("X coordinate out of range")
 
         if self.grasp_point[1] < self.minimum_y or self.grasp_point[1] > self.maximum_y:
             valid = False
+            rospy.logwarn(self.grasp_point[1])
+            if self.verbose: rospy.logwarn("Y coordinate out of range")
 
         if self.grasp_point[2] < self.minimum_z or self.grasp_point[2] > self.maximum_z:
             valid = False
+            if self.verbose: rospy.logwarn("Z coordinate out of range")
 
         return valid
