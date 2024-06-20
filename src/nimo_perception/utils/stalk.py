@@ -248,6 +248,7 @@ class Stalk:
         # Filter based on score
         if self.score < 0.8:
             valid = False
+            # if self.verbose: rospy.logwarn("Score too low")
 
         # Filter based on width
         if self.width < self.minimum_stalk_width or self.width > self.maximum_stalk_width:
