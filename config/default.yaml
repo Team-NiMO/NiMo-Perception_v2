@@ -22,7 +22,7 @@ stalk:
   feature_point_offset: 10                    # The offset in pixels between each feature
   optimal_grasp_height: 0.06                  # The optimal grasp height above the base of the cornstalk (m)
   cluster_threshold: 0.1                      # The threshold to call multiple detections the same cornstalk (m)
-  minimum_stalk_width: 12                     # The minimum stalk width graspable (mm)
+  minimum_stalk_width: 16                     # The minimum stalk width graspable (mm)
   maximum_stalk_width: 77                     # The maximum stalk width graspable (mm)
 
   # The limits of the workspace in the world frame (m)
