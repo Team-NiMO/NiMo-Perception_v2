@@ -255,7 +255,7 @@ class Stalk:
             valid = False
             
         # Filter based on grasp point location  
-        if abs(self.grasp_point[0]) < self.minimum_x or self.grasp_point[0] > self.maximum_x:
+        if abs(self.grasp_point[0]) < self.minimum_x or abs(self.grasp_point[0]) > self.maximum_x:
             valid = False
 
         if self.grasp_point[1] < self.minimum_y or self.grasp_point[1] > self.maximum_y:
