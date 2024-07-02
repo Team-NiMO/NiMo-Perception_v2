@@ -259,7 +259,7 @@ class Stalk:
             if self.verbose: rospy.logwarn("Width out of range")
             
         # Filter based on grasp point location  
-        if abs(self.grasp_point[0]) < self.minimum_x or self.grasp_point[0] > self.maximum_x:
+        if abs(self.grasp_point[0]) < self.minimum_x or abs(self.grasp_point[0]) > self.maximum_x:
             valid = False
             if self.verbose: rospy.logwarn("X coordinate out of range")
 
