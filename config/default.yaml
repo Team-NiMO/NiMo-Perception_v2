@@ -30,5 +30,5 @@ stalk:
   max_x: 0.4
   min_y: -1
   max_y: -0.281
-  min_z: 0.7
+  min_z: 0.6
   max_z: 0.81
