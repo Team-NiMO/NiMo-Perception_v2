@@ -16,6 +16,8 @@ pip install 'git+https://github.com/facebookresearch/detectron2.git'
 ```
 Then, update the [configuration file](config/default.yaml) if necessary.
 
+Download the model weights from [this link](https://drive.google.com/file/d/19bDrrN4pFZPGfqd4r-NZjJYxa13hHlI-/view?usp=share_link), and place them in a new folder called `NiMo-Perception_v2/weights`
+
 If using an Intel RealSense camera, use [this link](https://github.com/IntelRealSense/librealsense/blob/master/doc/distribution_linux.md#installing-the-packages) to install the RealSense SDK. To confirm installation, run `realsense-viewer` in the terminal with the camera connected.
 
 Then clone the [realsense-ros](https://github.com/IntelRealSense/realsense-ros) repository into the `src` folder of your ROS workspace, switch to the `ros1-legacy` branch and make the workspace.
@@ -86,9 +88,21 @@ If the camera needs to be calibrated, refer to [calibration.md](docs/calibration
 - Average stalk objects instead of grasp points
 
 ## Common Issues
-**`This repository is over its data quota.`**
+**`Intel RealSense SDK 2.0 is missing, please install it from...`**
 
-Alternatively, the model can be downloaded from [this link](https://drive.google.com/file/d/19bDrrN4pFZPGfqd4r-NZjJYxa13hHlI-/view?usp=share_link), replacing the existing model_field_day1.pth in the [weights](/weights/) folder.
+If `realsense-viewer` launches successfully, install the `librealsense2-dev` package
+
+```
+sudo apt-get install librealsense2-dev
+```
+
+**`Could not find a package configuration file provided by "ddynamic_reconfigure"...`**
+
+Install `ddynamic_reconfigure` for ROS Noetic
+
+```
+sudo apt-get install ros-noetic-ddynamic-reconfigure
+```
 
 **`numpy.ndarray size changed, may indicate binary incompatibility.`**
 
