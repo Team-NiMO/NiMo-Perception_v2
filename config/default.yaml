@@ -20,15 +20,15 @@ model:
 stalk:
   minimum_mask_area: 30                       # The minimum mask area to count as a stalk
   feature_point_offset: 10                    # The offset in pixels between each feature
-  optimal_grasp_height: 0.06                  # The optimal grasp height above the base of the cornstalk (m)
+  optimal_grasp_height: 0.08                  # The optimal grasp height above the base of the cornstalk (m)
   cluster_threshold: 0.1                      # The threshold to call multiple detections the same cornstalk (m)
-  minimum_stalk_width: 12                     # The minimum stalk width graspable (mm)
-  maximum_stalk_width: 70                     # The maximum stalk width graspable (mm)
+  minimum_stalk_width: 16                     # The minimum stalk width graspable (mm)
+  maximum_stalk_width: 77                     # The maximum stalk width graspable (mm)
 
   # The limits of the workspace in the world frame (m)
-  min_x: -100
-  max_x: 100
-  min_y: -0.7
-  max_y: 0
-  min_z: 0
-  max_z: 0.8
+  min_x: 0.1
+  max_x: 0.4
+  min_y: -1
+  max_y: -0.281
+  min_z: 0.7
+  max_z: 0.81

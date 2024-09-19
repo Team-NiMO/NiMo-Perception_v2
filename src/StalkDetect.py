@@ -263,6 +263,22 @@ class StalkDetect:
         # Cluster stalks + sort
         clustered_grasp_points, clustered_weights, _ = self.clusterStalks(self.stalks)
 
+        # # FIX STALKS TO CLOSE TO EACH OTHER
+        # n = len(clustered_grasp_points)
+        # delete_ind = []
+        # for i in range(n):
+        #     for j in range(i+1,n):
+        #         point1 = clustered_grasp_points[i]
+        #         point2 = clustered_grasp_points[j]
+        #         if (point1.x - point2.x) < 0.12:
+        #             delete_ind.append(i)
+        #             delete_ind.append(j)
+        
+        # delete_ind = list(set(delete_ind))
+        # for i in range(len(delete_ind), 0, -1):
+        #     del clustered_grasp_points[delete_ind[i]]
+        #     del clustered_weights[delete_ind[i]]
+
         grasp_msgs = []
         for grasp_point, weight in zip(clustered_grasp_points, clustered_weights):
             grasp_msgs.append(GraspPoint(position=grasp_point, weight=weight))

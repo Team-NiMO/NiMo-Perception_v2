@@ -248,13 +248,14 @@ class Stalk:
         # Filter based on score
         if self.score < 0.8:
             valid = False
+            # if self.verbose: rospy.logwarn("Score too low")
 
         # Filter based on width
         if self.width < self.minimum_stalk_width or self.width > self.maximum_stalk_width:
             valid = False
             
         # Filter based on grasp point location  
-        if self.grasp_point[0] < self.minimum_x or self.grasp_point[0] > self.maximum_x:
+        if abs(self.grasp_point[0]) < self.minimum_x or abs(self.grasp_point[0]) > self.maximum_x:
             valid = False
 
         if self.grasp_point[1] < self.minimum_y or self.grasp_point[1] > self.maximum_y:
