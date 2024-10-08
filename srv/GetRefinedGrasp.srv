@@ -1,0 +1,8 @@
+uint32 num_frames
+float64 timeout
+geometry_msgs/Point initial_grasp_point
+---
+string success
+uint16 num_frames
+geometry_msgs/Point refined_grasp_point
+

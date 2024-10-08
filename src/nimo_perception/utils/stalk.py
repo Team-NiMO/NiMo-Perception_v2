@@ -38,6 +38,40 @@ class Stalk:
 
         self.valid = self.isValid(self.valid)
 
+    def __init__(self, mask, score, depth_image, camera_intrinsic, config, initial_grasp_point):
+        self.valid = True
+        self.score = score
+        self.camera_height, self.camera_width = depth_image.shape
+        self.camera_intrinsic = camera_intrinsic
+
+        self.loadConfig(config)
+
+        # Get stalk features in camera frame
+        self.cam_features = self.getFeatures(mask, depth_image)
+        if not self.valid: return
+
+        # Get stalk width
+        self.width = self.getWidth(self.cam_features, mask, depth_image)
+        if not self.valid: return
+
+        # Transform features to world frame
+        self.world_features = self.transformFeatures(self.cam_features)
+        if not self.valid: return
+
+        # Get stalk line
+        self.stalk_line = self.getLine(self.world_features)
+        if not self.valid: return
+        
+        # Recalculate grasp point, from initial grasp point
+        self.grasp_point, self.dist_to_initial = self.recalculateGrasp(self.world_features, initial_grasp_point)
+        if not self.valid: return
+        
+        # Get weight
+        self.weight = self.getWeight()
+        if not self.valid: return
+
+        self.valid = self.isValid(self.valid)
+
     def loadConfig(self, config):
         '''
         Load config specified by yaml file
@@ -227,6 +261,34 @@ class Stalk:
         y = self.stalk_line[1][1] + t * normalized_direction[1]
 
         return (x, y, z)
+
+    def recalculateGrasp(self, stalk_features, initial_grasp_point):
+        '''
+        Recalculate grasp point, from initial grasp point.
+
+        Parameters
+            stalk_features: The stalk features in the world frame
+            initial_grasp_point:  Grasp point, as defined by initial
+                                    grasp point calculations.
+
+        Returns
+            grasp_point: The grasp point in the world frame
+        '''
+
+        z =  initial_grasp_point.z
+
+        normalized_direction = self.stalk_line[0] / np.linalg.norm(self.stalk_line[0])
+        t = (z - self.stalk_line[1][2]) / normalized_direction[2]
+
+        x = self.stalk_line[1][0] + t * normalized_direction[0]
+        y = self.stalk_line[1][1] + t * normalized_direction[1]
+
+        new_grasp_pt = (x, y, z)
+        initial_grasp_pt = (initial_grasp_point.x, initial_grasp_point.y, initial_grasp_point.z)
+
+        dist_to_initial = np.linalg.norm(list(new_grasp_pt) - list(initial_grasp_pt))
+
+        return (x, y, z), dist_to_initial
     
     def getWeight(self):
         '''

@@ -58,6 +58,7 @@ add_service_files(
   FILES
   GetStalks.srv
   GetWidth.srv
+  GetRefinedGrasp.srv
 )
 
 ## Generate actions in the 'action' folder
