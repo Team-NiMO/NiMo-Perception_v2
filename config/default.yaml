@@ -26,18 +26,9 @@ stalk:
   maximum_stalk_width: 77                     # The maximum stalk width graspable (mm)
 
   # The limits of the workspace in the world frame (m)
-<<<<<<< Updated upstream
   min_x: 0.1
   max_x: 0.4
   min_y: -1
   max_y: -0.281
   min_z: 0.7
   max_z: 0.81
-=======
-  min_x: -100
-  max_x: 100
-  min_y: -0.7
-  max_y: 0
-  min_z: 0
-  max_z: 0.8
->>>>>>> Stashed changes

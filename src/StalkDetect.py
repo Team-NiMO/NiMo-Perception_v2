@@ -54,6 +54,7 @@ class StalkDetect:
         # Setup services
         rospy.Service('GetStalks', GetStalks, self.getStalks)
         rospy.Service('GetWidth', GetWidth, self.getWidth)
+        rospy.Service('GetRefinedGrasp', GetRefinedGrasp, self.getRefinedGrasp)
 
         if self.verbose: rospy.loginfo('Waiting for service calls...')
 
@@ -183,10 +184,10 @@ class StalkDetect:
         for mask, score in zip(masks, scores):
             if self.for_visual_servoing:
                 new_stalk = stalk.Stalk(mask, score, depth_image, self.camera_intrinsic, self.config, self.initial_grasp_point)
-                new_stalks.append(new_stalk)
+                if new_stalk.valid:
+                    new_stalks.append(new_stalk)
             else:
                 new_stalk = stalk.Stalk(mask, score, depth_image, self.camera_intrinsic, self.config)
-
                 # Append to list if stalks are valid
                 if new_stalk.valid:
                     new_stalks.append(new_stalk)
@@ -426,7 +427,7 @@ class StalkDetect:
             self.inference_index = max([int(f[len("FEATURES"):].split("-")[0]) for f in os.listdir(self.package_path+"/output")]) + 1
         except:
             self.inference_index = 0
-        self.for_visual_servoing = False
+        self.for_visual_servoing = True
         self.initial_grasp_point = req.initial_grasp_point
 
         # Setup callbacks
@@ -452,8 +453,7 @@ class StalkDetect:
         # Cluster stalks + sort
         clustered_grasp_points, _, _ = self.clusterStalks(self.stalks)
 
-        return_point = Point(clustered_grasp_points[0][0], clustered_grasp_points[0][1], clustered_grasp_points[0][2])
-        return GetRefinedGraspResponse(success="DONE", num_frames=self.image_index+1, refined_grasp_point = return_point)
+        return GetRefinedGraspResponse(success="DONE", num_frames=self.image_index+1, refined_grasp_point = clustered_grasp_points[0])
 
 if __name__ == "__main__":
     rospy.init_node('nimo_perception')

@@ -4,7 +4,7 @@ import pyransac3d as pyrsc
 from nimo_perception.utils import utils
 
 class Stalk:
-    def __init__(self, mask, score, depth_image, camera_intrinsic, config):
+    def __init__(self, mask, score, depth_image, camera_intrinsic, config, initial_grasp_point = None):
         self.valid = True
         self.score = score
         self.camera_height, self.camera_width = depth_image.shape
@@ -28,43 +28,14 @@ class Stalk:
         self.stalk_line = self.getLine(self.world_features)
         if not self.valid: return
         
-        # Get grasp point
-        self.grasp_point = self.getGrasp(self.world_features)
-        if not self.valid: return
-        
-        # Get weight
-        self.weight = self.getWeight()
-        if not self.valid: return
-
-        self.valid = self.isValid(self.valid)
-
-    def __init__(self, mask, score, depth_image, camera_intrinsic, config, initial_grasp_point):
-        self.valid = True
-        self.score = score
-        self.camera_height, self.camera_width = depth_image.shape
-        self.camera_intrinsic = camera_intrinsic
-
-        self.loadConfig(config)
-
-        # Get stalk features in camera frame
-        self.cam_features = self.getFeatures(mask, depth_image)
-        if not self.valid: return
-
-        # Get stalk width
-        self.width = self.getWidth(self.cam_features, mask, depth_image)
-        if not self.valid: return
-
-        # Transform features to world frame
-        self.world_features = self.transformFeatures(self.cam_features)
-        if not self.valid: return
-
-        # Get stalk line
-        self.stalk_line = self.getLine(self.world_features)
-        if not self.valid: return
-        
-        # Recalculate grasp point, from initial grasp point
-        self.grasp_point, self.dist_to_initial = self.recalculateGrasp(self.world_features, initial_grasp_point)
-        if not self.valid: return
+        if initial_grasp_point is None:
+            # Get grasp point
+            self.grasp_point = self.getGrasp(self.world_features)
+            if not self.valid: return
+        else:
+            # Recalculate grasp point, from initial grasp point
+            self.grasp_point, self.dist_to_initial = self.recalculateGrasp(self.world_features, initial_grasp_point)
+            if not self.valid: return
         
         # Get weight
         self.weight = self.getWeight()
@@ -286,7 +257,7 @@ class Stalk:
         new_grasp_pt = (x, y, z)
         initial_grasp_pt = (initial_grasp_point.x, initial_grasp_point.y, initial_grasp_point.z)
 
-        dist_to_initial = np.linalg.norm(list(new_grasp_pt) - list(initial_grasp_pt))
+        dist_to_initial = np.linalg.norm(np.array(list(new_grasp_pt)) - np.array(list(initial_grasp_pt)))
 
         return (x, y, z), dist_to_initial
     
