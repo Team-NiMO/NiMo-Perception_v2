@@ -8,7 +8,7 @@ camera:
   image_topic: '/camera/color/image_raw'      # The image topic for the RGB-D camera
   depth_topic: '/camera/depth/image_rect_raw' # The depth topic for the RGB-D camera
   camera_frame: 'camera_link'                 # The frame associated with the camera
-  world_frame: 'camera_link'                        # The frame in which detections should be published
+  world_frame: 'world'                        # The frame in which detections should be published
   brightness: 0.75
 
 model:
@@ -22,13 +22,13 @@ stalk:
   feature_point_offset: 10                    # The offset in pixels between each feature
   optimal_grasp_height: 0.08                  # The optimal grasp height above the base of the cornstalk (m)
   cluster_threshold: 0.1                      # The threshold to call multiple detections the same cornstalk (m)
-  minimum_stalk_width: 16                     # The minimum stalk width graspable (mm)
-  maximum_stalk_width: 77                     # The maximum stalk width graspable (mm)
+  minimum_stalk_width: 0 #16                     # The minimum stalk width graspable (mm)
+  maximum_stalk_width: 770 #77                     # The maximum stalk width graspable (mm)
 
   # The limits of the workspace in the world frame (m)
   min_x: 0.1
   max_x: 0.4
   min_y: -1
   max_y: -0.281
-  min_z: 0.7
-  max_z: 0.81
+  min_z: -1000
+  max_z: 10000
