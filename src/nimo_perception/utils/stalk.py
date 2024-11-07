@@ -1,3 +1,4 @@
+import rospy
 import numpy as np
 import warnings
 import pyransac3d as pyrsc
@@ -6,6 +7,7 @@ from nimo_perception.utils import utils
 class Stalk:
     def __init__(self, mask, score, depth_image, camera_intrinsic, config, initial_grasp_point = None):
         self.valid = True
+        self.verbose = True
         self.score = score
         self.camera_height, self.camera_width = depth_image.shape
         self.camera_intrinsic = camera_intrinsic
@@ -81,6 +83,7 @@ class Stalk:
         # Ensure the mask has the minimum numbgetStalkFeatures(self, masks, depth_image)er of pixels
         if np.count_nonzero(mask) < self.minimum_mask_area:
             self.valid = False
+            rospy.logwarn("The mask is less than the minimum mask area.")
             return
 
         # Swap x and y in the mask
@@ -125,12 +128,14 @@ class Stalk:
 
         if len(features) == 0:
             self.valid = False
+            rospy.logwarn("The length of the features is 0.")
             return 0
 
         try:
             slope, _, _ = utils.ransac_2d(features)
         except:
             self.valid = False
+            rospy.logwarn("Ransac 2D failed.")
             return 0
 
         perp_slope = -1 / slope
@@ -203,9 +208,11 @@ class Stalk:
             line = pyrsc.Line().fit(points, thresh=0.025, maxIteration=1000)
             self.world_features = points[line[2]]
             if len(w) > 0 and not issubclass(w[-1].category, RuntimeWarning):
+                rospy.logwarn("Pyransac3D failed. Case 1.")
                 self.valid = False
 
             if len(self.world_features) == 0:
+                rospy.logwarn("Pyransac3D failed. Case 2.")
                 self.valid = False
 
         return line
@@ -281,20 +288,25 @@ class Stalk:
         # Filter based on score
         if self.score < 0.8:
             valid = False
-            # if self.verbose: rospy.logwarn("Score too low")
+            if self.verbose: rospy.logwarn("Invalid Stalk: low confidence")
 
         # Filter based on width
+        rospy.logwarn("Width = %.2f", self.width)
         if self.width < self.minimum_stalk_width or self.width > self.maximum_stalk_width:
             valid = False
+            if self.verbose: rospy.logwarn("Invalid Stalk: width outside bounds")
             
         # Filter based on grasp point location  
         if abs(self.grasp_point[0]) < self.minimum_x or abs(self.grasp_point[0]) > self.maximum_x:
             valid = False
+            if self.verbose: rospy.logwarn("Invalid Stalk: stalk outside x bounds (%.2f)" % self.grasp_point[0])
 
         if self.grasp_point[1] < self.minimum_y or self.grasp_point[1] > self.maximum_y:
             valid = False
+            if self.verbose: rospy.logwarn("Invalid Stalk: stalk outside y bounds (%.2f)" % self.grasp_point[1])
 
         if self.grasp_point[2] < self.minimum_z or self.grasp_point[2] > self.maximum_z:
             valid = False
+            if self.verbose: rospy.logwarn("Invalid Stalk: stalk outside z bounds (%.2f)" % self.grasp_point[2])
 
         return valid
