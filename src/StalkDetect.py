@@ -144,6 +144,24 @@ class StalkDetect:
             clustered_weights.append(weight_avg)
             clustered_widths.append(width_avg)
 
+        # Distance offset for hook motion in x + End Effector width / 2 + Clearance
+        X_DIFF_THRESH = 0.085 + 0.1/2 + self.x_diff_clearance
+
+        clustered_weights = [x for _, x in sorted(zip(clustered_grasp_points, clustered_weights), key=lambda pair: pair[0].x, reverse=False)]
+        clustered_widths = [x for _, x in sorted(zip(clustered_grasp_points, clustered_widths), key=lambda pair: pair[0].x, reverse=False)]
+        clustered_grasp_points = sorted(clustered_grasp_points, key = lambda point: point.x, reverse = False)
+
+        clustered_grasp_points_in_x = [point.x for point in clustered_grasp_points]
+        diff_in_x = np.diff(clustered_grasp_points_in_x)
+        diff_mask = np.concatenate((np.array([True]), diff_in_x >= X_DIFF_THRESH)).astype(bool)
+
+        rospy.logwarn(diff_mask)
+
+        if not diff_mask.all():
+            if self.verbose: rospy.loginfo('Stalks too close together, some stalks removed')
+
+        clustered_weights = [x for y, x in zip(diff_mask, clustered_weights) if y]
+
         # Sort representative stalks by weight
         if self.for_visual_servoing: # Sort by smallest distance to original grasp point to largest distance to original grasp point
             sorted_grasp_points = [x for _, x in sorted(zip(clustered_weights, clustered_grasp_points), key=lambda pair: pair[0], reverse=False)]
