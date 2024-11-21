@@ -86,6 +86,7 @@ class StalkDetect:
         self.model_device = config["model"]["device"]
 
         self.cluster_threshold = config["stalk"]["cluster_threshold"]
+        self.x_diff_clearance = config["stalk"]["x_diff_clearance"]
 
         self.config = config
 
@@ -144,8 +145,8 @@ class StalkDetect:
             clustered_weights.append(weight_avg)
             clustered_widths.append(width_avg)
 
-        # Distance offset for hook motion in x + End Effector width / 2 + Clearance
-        X_DIFF_THRESH = 0.085 + 0.1/2 + self.x_diff_clearance
+        # End Effector Width + Clearance on both sides
+        X_DIFF_THRESH = 0.08 + 0.05 + self.x_diff_clearance
 
         clustered_weights = [x for _, x in sorted(zip(clustered_grasp_points, clustered_weights), key=lambda pair: pair[0].x, reverse=False)]
         clustered_widths = [x for _, x in sorted(zip(clustered_grasp_points, clustered_widths), key=lambda pair: pair[0].x, reverse=False)]
