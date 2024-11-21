@@ -165,6 +165,8 @@ class StalkDetect:
             if self.verbose: rospy.loginfo('Stalks too close together, some stalks removed')
 
         clustered_weights = [x for y, x in zip(diff_mask, clustered_weights) if y]
+        clustered_widths = [x for y, x in zip(diff_mask, clustered_widths) if y]
+        clustered_grasp_points = [x for y, x in zip(diff_mask, clustered_grasp_points) if y]
 
         temp_clustered_widths = []
         temp_clustered_weights = []
@@ -415,6 +417,11 @@ class StalkDetect:
             dists.append(np.linalg.norm(np.array(camera_location) - np.array(point)))
 
         # If closest stalk is within threshold, return width
+        try:
+            min_dist = min(dists)
+        except:
+            min_dist = np.inf
+            
         if min(dists) < 0.25:
             return GetWidthResponse(success="DONE", width=clustered_widths[np.argmin(dists)], num_frames=self.image_index+1)
         else:
