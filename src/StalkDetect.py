@@ -88,6 +88,9 @@ class StalkDetect:
         self.cluster_threshold = config["stalk"]["cluster_threshold"]
         self.x_diff_clearance = config["stalk"]["x_diff_clearance"]
 
+        self.minimum_x = config["stalk"]["min_x"]
+        self.maximum_x = config["stalk"]["max_x"]
+
         self.config = config
 
     def clusterStalks(self, stalks):
@@ -163,6 +166,19 @@ class StalkDetect:
 
         clustered_weights = [x for y, x in zip(diff_mask, clustered_weights) if y]
 
+        temp_clustered_widths = []
+        temp_clustered_weights = []
+        temp_clustered_grasp_points = []
+        for i, clustered_grasp_point in enumerate(clustered_grasp_points):
+            if abs(clustered_grasp_point.x) > self.minimum_x and abs(clustered_grasp_point.x) < self.maximum_x:
+                temp_clustered_widths.append(clustered_widths[i])
+                temp_clustered_weights.append(clustered_weights[i])
+                temp_clustered_grasp_points.append(clustered_grasp_points[i])
+
+        clustered_widths = temp_clustered_widths
+        clustered_weights = temp_clustered_weights
+        clustered_grasp_points = temp_clustered_grasp_points
+
         # Sort representative stalks by weight
         if self.for_visual_servoing: # Sort by smallest distance to original grasp point to largest distance to original grasp point
             sorted_grasp_points = [x for _, x in sorted(zip(clustered_weights, clustered_grasp_points), key=lambda pair: pair[0], reverse=False)]
@@ -203,12 +219,12 @@ class StalkDetect:
         for mask, score in zip(masks, scores):
             if self.for_visual_servoing:
                 new_stalk = stalk.Stalk(mask, score, depth_image, self.camera_intrinsic, self.config, self.initial_grasp_point)
-                if new_stalk.valid:
+                if new_stalk.valid != 0:
                     new_stalks.append(new_stalk)
             else:
                 new_stalk = stalk.Stalk(mask, score, depth_image, self.camera_intrinsic, self.config)
                 # Append to list if stalks are valid
-                if new_stalk.valid:
+                if new_stalk.valid != 0:
                     new_stalks.append(new_stalk)
 
         if self.visualize:
