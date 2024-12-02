@@ -422,7 +422,7 @@ class StalkDetect:
         except:
             min_dist = np.inf
             
-        if min(dists) < 0.25:
+        if min_dist < 0.25:
             return GetWidthResponse(success="DONE", width=clustered_widths[np.argmin(dists)], num_frames=self.image_index+1)
         else:
             rospy.logwarn('Nearest stalk is not detected')
@@ -495,7 +495,11 @@ class StalkDetect:
         # Cluster stalks + sort
         clustered_grasp_points, _, _ = self.clusterStalks(self.stalks)
 
-        return GetRefinedGraspResponse(success="DONE", num_frames=self.image_index+1, refined_grasp_point = clustered_grasp_points[0])
+        try:
+            return GetRefinedGraspResponse(success="DONE", num_frames=self.image_index+1, refined_grasp_point = clustered_grasp_points[0])
+        except:
+            rospy.logwarn('No valid stalks detected in any frame for this service request')
+            return GetRefinedGraspResponse(success='ERROR', num_frames=self.image_index + 1, refined_grasp_point=Point(0., 0., 0.))
 
 if __name__ == "__main__":
     rospy.init_node('nimo_perception')
