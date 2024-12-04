@@ -15,20 +15,21 @@ model:
   model: Mask_RCNN                            # The architecture to use for detection (Supported Mask R-CNN)
   weights: 'model_field_day1.pth'             # The weights to use for the selected model
   score_threshold: 0.9                        # The threshold to return detections
-  device: 0                                   # Which GPU to run the model on (-1 for CPU)
+  device: -1                                   # Which GPU to run the model on (-1 for CPU)
 
 stalk:
   minimum_mask_area: 30                       # The minimum mask area to count as a stalk
   feature_point_offset: 10                    # The offset in pixels between each feature
   optimal_grasp_height: 0.08                  # The optimal grasp height above the base of the cornstalk (m)
   cluster_threshold: 0.1                      # The threshold to call multiple detections the same cornstalk (m)
-  minimum_stalk_width: 16                     # The minimum stalk width graspable (mm)
-  maximum_stalk_width: 77                     # The maximum stalk width graspable (mm)
+  minimum_stalk_width: 0 #16                  # The minimum stalk width graspable (mm)
+  maximum_stalk_width: 100 #77                # The maximum stalk width graspable (mm)
+  x_diff_clearance: 0.05                      # Clearance value for difference between 2 close stalk (m)
 
   # The limits of the workspace in the world frame (m)
-  min_x: 0.1
+  min_x: 0.16
   max_x: 0.4
   min_y: -1
   max_y: -0.281
-  min_z: 0.7
-  max_z: 0.81
+  min_z: -1000
+  max_z: 10000
